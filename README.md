@@ -1,8 +1,15 @@
-# dev
+# dev [![Go Report Card](https://goreportcard.com/badge/github.com/wish/dev)](https://goreportcard.com/report/github.com/wish/dev)
 
 dev is a command line tool that provides a thin layer of porcelain on top of [Docker Compose](https://docs.docker.com/compose/).
 
 # Background
+
+# Requirements
+
+ * Support sharing of docker-compose configuration across projects
+ * Support sharing of networks across projects (i.e., manage creation of 'external' networks directly)
+ * Support authentication with private container repositories
+ * Support dependencies between projects, networks and registries
 
 # Table of Contents
 - [Installing](#installing)
@@ -11,7 +18,6 @@ dev is a command line tool that provides a thin layer of porcelain on top of [Do
   * [build](#build)
   * [up](#up)
   * [ps](#ps)
-- [Troubleshooting](#troubleshooting)
 
 # Installing
 
@@ -43,11 +49,8 @@ You might have /home/shaw/Projects/.dev.toml which contains something like this:
  ```toml
 
  [[projects]]
-   name=foo
-   docker_compose_files=[
-      "docker/docker-compose.shared.yml",
-      "docker-compose.yml",
-     ]
+   name="foo"
+   docker_compose_files=["docker/docker-compose.shared.yml", "docker-compose.yml"]
 
  ```
 
