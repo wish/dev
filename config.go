@@ -9,22 +9,28 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-const DefaultSearchDepth = 2
+const (
+	projectSearchDepthDefault     = 2
+	registryTimeoutSecondsDefault = 2
+	registryContinueOnFail        = false
+)
 
+// Config is the datastructure into which we unmarshal the dev configuration
+// file.
 type Config struct {
-	Log                LogConfig  `mapstructure:"log"`
-	ProjectDirectories []string   `mapstructure:"directories"`
-	Projects           []*Project `mapstructure:"projects"`
-
-	// Full path and filename of docker-compose.yml files in the source
-	// trees specified in the ProjectDirectories list.
-	ComposeFiles []string
+	Log                LogConfig   `mapstructure:"log"`
+	ProjectDirectories []string    `mapstructure:"directories"`
+	Projects           []*Project  `mapstructure:"projects"`
+	Registries         []*Registry `mapstructure:"registries"`
 }
 
+// LogConfig holds the logging related configuration.
 type LogConfig struct {
 	Level string `mapstructure:"level"`
 }
 
+// Project configuration structure. This must be used when using more than one
+// docker-compose.yml file for a project.
 type Project struct {
 	// The absolute paths of the docker compose files for this project. If
 	// not specified, project directories will be searched for one. If the
@@ -43,7 +49,30 @@ type Project struct {
 	Hidden bool `mapstructure:"hidden"`
 	// The number of sub-directories undeath a Project directory that is
 	// searched for DockerCompose files.
-	SearchDepth int `mapstructure: "depth"`
+	SearchDepth int `mapstructure:"depth"`
+}
+
+// Registry repesents the configuration required to model a container registry.
+// Users can configure their project to be dependent on a registry. When this
+// occurs, we will login to the container registry using the configuration
+// provided here. This will allow users to host their images in private image
+// repos.
+type Registry struct {
+	// User readable name, not used by the docker client
+	Name string `mapstructure:"name"`
+	URL  string `mapstructure:"url"`
+	// TODO: other forms of auth exist and should be supported, but this is
+	// what I need..
+	Username string `mapstructure:"username"`
+	Password string `mapstructure:"password"`
+
+	// Sometimes these can be firewalled, so a default timeout of 2 seconds
+	// is provided, though can be tweaked here
+	TimeoutSeconds int64 `mapstructure:"timeout_seconds"`
+
+	// if login or connection fails, should dev continue with command or
+	// fail hard.  Default is True
+	ContinueOnFailure bool `mapstructure:"continue_on_failure"`
 }
 
 // RunnableProjects returns the Project configuration of each Project
@@ -59,6 +88,9 @@ func (c *Config) RunnableProjects() []*Project {
 	return projects
 }
 
+// GetProjectIndentifier returns the name by which the user would like to call
+// this project. This takes into account the project configuration found for
+// this particular project.
 func (p *Project) GetProjectIdentifier() string {
 	if p.Alias != "" {
 		return p.Alias
@@ -143,7 +175,7 @@ func getOrCreateProjectConfig(devConfig *Config, projectPath string) *Project {
 	project := &Project{
 		Directory:   projectPath,
 		Name:        projectNameFromPath(projectPath),
-		SearchDepth: DefaultSearchDepth,
+		SearchDepth: projectSearchDepthDefault,
 	}
 	if directoryContainsDockerComposeConfig(projectPath) {
 		composePath := dockerComposeFullPath(projectPath)
@@ -201,6 +233,12 @@ func ExpandConfig(devConfig *Config) {
 					project.DockerComposeFilenames[i] = path.Join(dir, composeFile[end:])
 				}
 			}
+		}
+	}
+
+	for _, registry := range devConfig.Registries {
+		if registry.TimeoutSeconds == 0 {
+			registry.TimeoutSeconds = registryTimeoutSecondsDefault
 		}
 	}
 

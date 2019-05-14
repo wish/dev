@@ -10,6 +10,7 @@ import (
 
 	log "github.com/sirupsen/logrus"
 	"github.com/wish/dev"
+	"github.com/wish/dev/registry"
 
 	"github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
@@ -17,16 +18,18 @@ import (
 )
 
 var (
-	cfgFile, logLevel  string
-	BuildSha           string = "BuildSha not set (use Makefile to set)"
+	cfgFile, logLevel string
+	// BuildSha is used by the build to include the git sha in the --version output
+	BuildSha string = "BuildSha not set (use Makefile to set)"
+	// BuildSha is used by the build to include the build date in the --version output
 	BuildDate          string = "BuildDate not set (use Makefile to set)"
-	Config             dev.Config
+	config             dev.Config
 	projectDirectories string
 )
 
 const (
-	// name of the default configuration file
-	ConfigFilename = ".dev.toml"
+	// configFilename is the filename of the default configuration file
+	configFilename = ".dev.toml"
 )
 
 var rootCmd = &cobra.Command{
@@ -86,30 +89,42 @@ func runDockerCompose(cmd string, composePaths []string, args ...string) {
 	command.Run()
 }
 
-func addProjectCommands(projectCmd *cobra.Command, config *dev.Project) {
+func addProjectCommands(projectCmd *cobra.Command, dev *dev.Config, project *dev.Project) {
 	build := &cobra.Command{
 		Use:   "build",
-		Short: "Build the " + config.GetProjectIdentifier() + " container (and its dependencies)",
+		Short: "Build the " + project.GetProjectIdentifier() + " container (and its dependencies)",
 		Run: func(cmd *cobra.Command, args []string) {
-			runDockerCompose("build", config.DockerComposeFilenames)
+			runDockerCompose("build", project.DockerComposeFilenames)
 		},
 	}
 	projectCmd.AddCommand(build)
 
 	up := &cobra.Command{
 		Use:   "up",
-		Short: "Start the " + config.GetProjectIdentifier() + " containers",
+		Short: "Start the " + project.GetProjectIdentifier() + " containers",
 		Run: func(cmd *cobra.Command, args []string) {
-			runDockerCompose("up", config.DockerComposeFilenames)
+			for _, r := range dev.Registries {
+				err := registry.Login(r)
+				if err != nil {
+					msg := fmt.Sprintf("Failed to login to %s registry: %s", r.Name, err)
+					if r.ContinueOnFailure {
+						log.Warn(msg)
+					} else {
+						log.Fatal(msg)
+					}
+
+				}
+			}
+			runDockerCompose("up", project.DockerComposeFilenames)
 		},
 	}
 	projectCmd.AddCommand(up)
 
 	ps := &cobra.Command{
 		Use:   "ps",
-		Short: "List status of " + config.GetProjectIdentifier() + " containers",
+		Short: "List status of " + project.GetProjectIdentifier() + " containers",
 		Run: func(cmd *cobra.Command, args []string) {
-			runDockerCompose("ps", config.DockerComposeFilenames)
+			runDockerCompose("ps", project.DockerComposeFilenames)
 		},
 	}
 	projectCmd.AddCommand(ps)
@@ -124,7 +139,7 @@ func addProjects(cmd *cobra.Command, config *dev.Config) error {
 			Short: "Run dev commands on the " + projectName + " project",
 		}
 		rootCmd.AddCommand(cmd)
-		addProjectCommands(cmd, project)
+		addProjectCommands(cmd, config, project)
 	}
 	return nil
 }
@@ -153,7 +168,7 @@ func init() {
 	// Take configuration file into account for logging preference
 	configureLogging()
 
-	if err := addProjects(rootCmd, &Config); err != nil {
+	if err := addProjects(rootCmd, &config); err != nil {
 		log.Fatalf("Error adding projects: %s", err)
 	}
 }
@@ -173,7 +188,7 @@ func getDefaultConfigDirectory() string {
 // default configuration file for this tool. This file is only consulted
 // when there is no project-level configuration file.
 func getDefaultAppConfigFilename() string {
-	return path.Join(getDefaultConfigDirectory(), ConfigFilename)
+	return path.Join(getDefaultConfigDirectory(), configFilename)
 }
 
 // locateConfigFile attempts to locate the path at which the configuration file
@@ -197,7 +212,7 @@ func locateConfigFile() string {
 	currentConfigFile := ""
 	devConfig := ""
 	for {
-		currentConfigFile = path.Join(currentDir, ConfigFilename)
+		currentConfigFile = path.Join(currentDir, configFilename)
 		if _, err := os.Stat(currentConfigFile); err == nil {
 			devConfig = currentConfigFile
 			break
@@ -243,9 +258,9 @@ func initConfig() {
 		}
 	}
 
-	if err := viper.Unmarshal(&Config); err != nil {
+	if err := viper.Unmarshal(&config); err != nil {
 		log.Fatal(err)
 	}
 
-	dev.ExpandConfig(&Config)
+	dev.ExpandConfig(&config)
 }
