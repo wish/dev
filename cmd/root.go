@@ -162,6 +162,19 @@ func addProjectCommands(projectCmd *cobra.Command, dev *dev.Config, project *dev
 		},
 	}
 	projectCmd.AddCommand(sh)
+
+	down := &cobra.Command{
+		Use:   "down",
+		Short: "Stop and destroy the " + project.GetProjectIdentifier() + " project container",
+		Long: `This stops and destroys the container of the same name as the directory in which
+its docker-compose.yml file is placed. It does not stop or destroy any containers that
+may have been brought up to support this project, which is the case for projects that
+use more one docker-compose.yml file.`,
+		Run: func(cmd *cobra.Command, args []string) {
+			runDockerCompose("down", project.DockerComposeFilenames, project.Name)
+		},
+	}
+	projectCmd.AddCommand(down)
 }
 
 func addProjects(cmd *cobra.Command, config *dev.Config) error {
