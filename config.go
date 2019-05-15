@@ -11,6 +11,7 @@ import (
 
 const (
 	projectSearchDepthDefault     = 2
+	projectShellDefault           = "/bin/bash"
 	registryTimeoutSecondsDefault = 2
 	registryContinueOnFail        = false
 )
@@ -50,6 +51,9 @@ type Project struct {
 	// The number of sub-directories undeath a Project directory that is
 	// searched for DockerCompose files.
 	SearchDepth int `mapstructure:"depth"`
+	// Shell used to enter the project container with 'sh' command,
+	// default is /bin/bash
+	Shell string `mapstructure:"shell"`
 }
 
 // Registry repesents the configuration required to model a container registry.
@@ -88,7 +92,7 @@ func (c *Config) RunnableProjects() []*Project {
 	return projects
 }
 
-// GetProjectIndentifier returns the name by which the user would like to call
+// GetProjectIdentifier returns the name by which the user would like to call
 // this project. This takes into account the project configuration found for
 // this particular project.
 func (p *Project) GetProjectIdentifier() string {
@@ -196,9 +200,7 @@ func expandProject(devConfig *Config, project *Project) {
 	}
 }
 
-// ExpandConfig makes modifications to the configuration structure
-// provided by the user before it is used by dev-cli.
-func ExpandConfig(devConfig *Config) {
+func expandEnvVariables(devConfig *Config) {
 	// See if any evironment variables are used in the Project
 	// Directories and expand as necessary.
 	for i, dir := range devConfig.ProjectDirectories {
@@ -216,12 +218,29 @@ func ExpandConfig(devConfig *Config) {
 			project.DockerComposeFilenames[i] = os.ExpandEnv(composeFile)
 		}
 	}
+}
 
+func setDefaults(devConfig *Config) {
+	// Need to be smarter here.. Users unable to specify 0 here, which is
+	// a reasonable default for many values.
 	for _, registry := range devConfig.Registries {
 		if registry.TimeoutSeconds == 0 {
 			registry.TimeoutSeconds = registryTimeoutSecondsDefault
 		}
 	}
+
+	for _, project := range devConfig.Projects {
+		if project.Shell == "" {
+			project.Shell = projectShellDefault
+		}
+	}
+}
+
+// ExpandConfig makes modifications to the configuration structure
+// provided by the user before it is used by dev-cli.
+func ExpandConfig(devConfig *Config) {
+	expandEnvVariables(devConfig)
+	setDefaults(devConfig)
 
 	// Find individual projects by locating docker-compose.yml files in the
 	// specified project directories.  Create/synchronize a Project

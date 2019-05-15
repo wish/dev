@@ -21,7 +21,7 @@ var (
 	cfgFile, logLevel string
 	// BuildSha is used by the build to include the git sha in the --version output
 	BuildSha string = "BuildSha not set (use Makefile to set)"
-	// BuildSha is used by the build to include the build date in the --version output
+	// BuildDate is used by the build to include the build date in the --version output
 	BuildDate          string = "BuildDate not set (use Makefile to set)"
 	config             dev.Config
 	projectDirectories string
@@ -65,8 +65,13 @@ func Execute() {
 	}
 }
 
+func quote(str string) string {
+	return fmt.Sprintf("%s", str)
+}
+
 func runDockerCompose(cmd string, composePaths []string, args ...string) {
 	var cmdLine []string
+
 	for _, path := range composePaths {
 		cmdLine = append(cmdLine, "-f", path)
 	}
@@ -78,10 +83,9 @@ func runDockerCompose(cmd string, composePaths []string, args ...string) {
 		cmdLine = append(cmdLine, arg)
 	}
 
-	log.Debugf("Running command: %s", strings.Join(cmdLine, " "))
+	log.Debugf("Running: docker-compose %s", strings.Join(cmdLine, " "))
 	command := exec.Command("docker-compose", cmdLine...)
 
-	// check this....
 	command.Stdout = os.Stdout
 	command.Stderr = os.Stderr
 	command.Stdin = os.Stdin
@@ -101,7 +105,7 @@ func addProjectCommands(projectCmd *cobra.Command, dev *dev.Config, project *dev
 
 	up := &cobra.Command{
 		Use:   "up",
-		Short: "Start the " + project.GetProjectIdentifier() + " containers",
+		Short: "Create and start the " + project.GetProjectIdentifier() + " containers",
 		Run: func(cmd *cobra.Command, args []string) {
 			for _, r := range dev.Registries {
 				err := registry.Login(r)
@@ -115,7 +119,8 @@ func addProjectCommands(projectCmd *cobra.Command, dev *dev.Config, project *dev
 
 				}
 			}
-			runDockerCompose("up", project.DockerComposeFilenames)
+			runDockerCompose("up", project.DockerComposeFilenames, "-d")
+			runDockerCompose("logs", project.DockerComposeFilenames, "-f", project.Name)
 		},
 	}
 	projectCmd.AddCommand(up)
@@ -128,6 +133,35 @@ func addProjectCommands(projectCmd *cobra.Command, dev *dev.Config, project *dev
 		},
 	}
 	projectCmd.AddCommand(ps)
+
+	// needs work here... to pass args, gotta quote everything... -- doesn't work, etc.
+	// if working directory is within the project, then the context of the command
+	// should match...should
+	sh := &cobra.Command{
+		Use:  "sh",
+		Args: cobra.ArbitraryArgs,
+		// Need to handle the flags manually. We do this so that we can
+		// send in flags to the container without quoting the entire
+		// string-- in the name of usability.
+		DisableFlagParsing: true,
+		Short:              "Get a shell on the " + project.Name + " container",
+		Run: func(cmd *cobra.Command, args []string) {
+			cmdLine := []string{project.Name, project.Shell}
+			// user wants to launch a command, not a shell.
+			if len(args) > 0 {
+				// assume a command starting with a dash is
+				// a cry for help
+				if strings.HasPrefix(args[0], ("-")) {
+					cmd.Help()
+					return
+				}
+				cmdLine = append(cmdLine, "-c")
+				cmdLine = append(cmdLine, quote(strings.Join(args, " ")))
+			}
+			runDockerCompose("exec", project.DockerComposeFilenames, cmdLine...)
+		},
+	}
+	projectCmd.AddCommand(sh)
 }
 
 func addProjects(cmd *cobra.Command, config *dev.Config) error {
@@ -146,7 +180,7 @@ func addProjects(cmd *cobra.Command, config *dev.Config) error {
 
 func init() {
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "configuration file")
-	rootCmd.PersistentFlags().StringVar(&logLevel, "log", "debug", "log level (warn, info, debug)")
+	rootCmd.PersistentFlags().StringVar(&logLevel, "log", "info", "log level (warn, info, debug)")
 	rootCmd.PersistentFlags().StringVar(&projectDirectories, "directories",
 		".", "Directories to search for docker-compose.yml files")
 
@@ -167,6 +201,12 @@ func init() {
 
 	// Take configuration file into account for logging preference
 	configureLogging()
+
+	// following removes the following: WARNING: Found orphan containers for this project.
+	err := os.Setenv("COMPOSE_IGNORE_ORPHANS", "True")
+	if err != nil {
+		log.Fatalf("Failed to set environment variable: %s", err)
+	}
 
 	if err := addProjects(rootCmd, &config); err != nil {
 		log.Fatalf("Error adding projects: %s", err)
