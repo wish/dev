@@ -202,37 +202,18 @@ func ExpandConfig(devConfig *Config) {
 	// See if any evironment variables are used in the Project
 	// Directories and expand as necessary.
 	for i, dir := range devConfig.ProjectDirectories {
-		if strings.HasPrefix(dir, "$") {
-			devConfig.ProjectDirectories[i] = os.Getenv(dir[1:])
-		}
+		devConfig.ProjectDirectories[i] = os.ExpandEnv(dir)
 	}
 
 	// Expand environment variables used in project directories..
 	for _, project := range devConfig.Projects {
-		if strings.HasPrefix(project.Directory, "$") {
-			// fragile..needs improvment
-			end := strings.Index(project.Directory, "/")
-			if end == -1 {
-				project.Directory = os.Getenv(project.Directory[1:])
-			} else {
-				dir := os.Getenv(project.Directory[1:end])
-				project.Directory = path.Join(dir, project.Directory[end:])
-			}
-		}
+		project.Directory = os.ExpandEnv(project.Directory)
 	}
 
 	// Expand environment vars used in docker_compose_file locations
 	for _, project := range devConfig.Projects {
 		for i, composeFile := range project.DockerComposeFilenames {
-			if strings.HasPrefix(composeFile, "$") {
-				end := strings.Index(composeFile, "/")
-				if end == -1 {
-					project.DockerComposeFilenames[i] = os.Getenv(composeFile[1:])
-				} else {
-					dir := os.Getenv(composeFile[1:end])
-					project.DockerComposeFilenames[i] = path.Join(dir, composeFile[end:])
-				}
-			}
+			project.DockerComposeFilenames[i] = os.ExpandEnv(composeFile)
 		}
 	}
 
