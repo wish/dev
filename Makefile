@@ -2,6 +2,7 @@ SHA  := $(shell git rev-parse --short HEAD)
 DATE := $(shell date +"%a %b %d %T %Y")
 UNAME_S := $(shell uname -s | tr A-Z a-z)
 GOFILES_BUILD := $(shell find . -type f -iname "*.go" | grep -v "^./vendor")
+GO_PACKAGES := $(shell go list ./...)
 
 default: \
 	build/${UNAME_S}/dev \
@@ -16,12 +17,21 @@ all:
 clean:
 	rm -rf build
 
-build/linux/dev: ${GOFILES_BUILD}
+lint:
+	@golint $(GO_PACKAGES)
+
+vet:
+	@go vet $(GO_PACKAGES)
+
+
+test: lint vet
+
+build/linux/dev: ${GOFILES_BUILD} test
 	@GOOS=linux CGO_ENABLED=0 go build -ldflags \
 	       '-X "github.com/wish/dev/cmd.BuildDate=${DATE}" -X "github.com/wish/dev/cmd.BuildSha=${SHA}"' \
 	       -o build/linux/dev cmd/dev/*
 
-build/darwin/dev: ${GOFILES_BUILD}
+build/darwin/dev: ${GOFILES_BUILD} test
 	@GOOS=darwin CGO_ENABLED=0 go build -ldflags \
 		'-X "github.com/wish/dev/cmd.BuildDate=${DATE}" -X "github.com/wish/dev/cmd.BuildSha=${SHA}"' \
 		-o build/darwin/dev cmd/dev/*

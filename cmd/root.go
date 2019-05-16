@@ -18,13 +18,12 @@ import (
 )
 
 var (
-	cfgFile, logLevel string
+	cfgFile, logLevel, projectDirectories string
 	// BuildSha is used by the build to include the git sha in the --version output
-	BuildSha string = "BuildSha not set (use Makefile to set)"
+	BuildSha = "BuildSha not set (use Makefile to set)"
 	// BuildDate is used by the build to include the build date in the --version output
-	BuildDate          string = "BuildDate not set (use Makefile to set)"
-	config             dev.Config
-	projectDirectories string
+	BuildDate = "BuildDate not set (use Makefile to set)"
+	config    dev.Config
 )
 
 const (
