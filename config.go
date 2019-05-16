@@ -44,8 +44,8 @@ type Project struct {
 	// DockerCompose.yml file.
 	Directory string `mapstructure:"directory"`
 	Name      string `mapstructure:"name"`
-	// A shorter name for this project for the generated sub-commands.
-	Alias string `mapstructure:"alias"`
+	// Alternate names for this project
+	Aliases []string `mapstructure:"aliases"`
 	// Whether project should be included for use by this project, default false
 	Hidden bool `mapstructure:"hidden"`
 	// The number of sub-directories undeath a Project directory that is
@@ -90,16 +90,6 @@ func (c *Config) RunnableProjects() []*Project {
 		}
 	}
 	return projects
-}
-
-// GetProjectIdentifier returns the name by which the user would like to call
-// this project. This takes into account the project configuration found for
-// this particular project.
-func (p *Project) GetProjectIdentifier() string {
-	if p.Alias != "" {
-		return p.Alias
-	}
-	return p.Name
 }
 
 func dockerComposeFullPath(directory string) string {

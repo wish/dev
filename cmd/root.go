@@ -96,7 +96,7 @@ func runDockerCompose(cmd string, composePaths []string, args ...string) {
 func addProjectCommands(projectCmd *cobra.Command, dev *dev.Config, project *dev.Project) {
 	build := &cobra.Command{
 		Use:   "build",
-		Short: "Build the " + project.GetProjectIdentifier() + " container (and its dependencies)",
+		Short: "Build the " + project.Name + " container (and its dependencies)",
 		Run: func(cmd *cobra.Command, args []string) {
 			runDockerCompose("build", project.DockerComposeFilenames)
 		},
@@ -105,7 +105,7 @@ func addProjectCommands(projectCmd *cobra.Command, dev *dev.Config, project *dev
 
 	up := &cobra.Command{
 		Use:   "up",
-		Short: "Create and start the " + project.GetProjectIdentifier() + " containers",
+		Short: "Create and start the " + project.Name + " containers",
 		Run: func(cmd *cobra.Command, args []string) {
 			for _, r := range dev.Registries {
 				err := registry.Login(r)
@@ -127,7 +127,7 @@ func addProjectCommands(projectCmd *cobra.Command, dev *dev.Config, project *dev
 
 	ps := &cobra.Command{
 		Use:   "ps",
-		Short: "List status of " + project.GetProjectIdentifier() + " containers",
+		Short: "List status of " + project.Name + " containers",
 		Run: func(cmd *cobra.Command, args []string) {
 			runDockerCompose("ps", project.DockerComposeFilenames)
 		},
@@ -138,13 +138,13 @@ func addProjectCommands(projectCmd *cobra.Command, dev *dev.Config, project *dev
 	// if working directory is within the project, then the context of the command
 	// should match...should
 	sh := &cobra.Command{
-		Use:  "sh",
-		Args: cobra.ArbitraryArgs,
+		Use:   "sh",
+		Short: "Get a shell on the " + project.Name + " container",
+		Args:  cobra.ArbitraryArgs,
 		// Need to handle the flags manually. We do this so that we can
 		// send in flags to the container without quoting the entire
 		// string-- in the name of usability.
 		DisableFlagParsing: true,
-		Short:              "Get a shell on the " + project.Name + " container",
 		Run: func(cmd *cobra.Command, args []string) {
 			cmdLine := []string{project.Name, project.Shell}
 			// user wants to launch a command, not a shell.
@@ -165,7 +165,7 @@ func addProjectCommands(projectCmd *cobra.Command, dev *dev.Config, project *dev
 
 	down := &cobra.Command{
 		Use:   "down",
-		Short: "Stop and destroy the " + project.GetProjectIdentifier() + " project container",
+		Short: "Stop and destroy the " + project.Name + " project container",
 		Long: `This stops and destroys the container of the same name as the directory in which
 its docker-compose.yml file is placed. It does not stop or destroy any containers that
 may have been brought up to support this project, which is the case for projects that
@@ -179,11 +179,11 @@ use more one docker-compose.yml file.`,
 
 func addProjects(cmd *cobra.Command, config *dev.Config) error {
 	for _, project := range config.RunnableProjects() {
-		projectName := project.GetProjectIdentifier()
-		log.Debugf("Adding %s to project commands", projectName)
+		log.Debugf("Adding %s to project commands", project.Name)
 		cmd := &cobra.Command{
-			Use:   projectName,
-			Short: "Run dev commands on the " + projectName + " project",
+			Use:     project.Name,
+			Short:   "Run dev commands on the " + project.Name + " project",
+			Aliases: project.Aliases,
 		}
 		rootCmd.AddCommand(cmd)
 		addProjectCommands(cmd, config, project)
