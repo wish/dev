@@ -26,11 +26,6 @@ var (
 	config    dev.Config
 )
 
-const (
-	// configFilename is the filename of the default configuration file
-	configFilename = ".dev.toml"
-)
-
 var rootCmd = &cobra.Command{
 	Use: "dev",
 	Version: "\n" +
@@ -288,7 +283,7 @@ func getDefaultConfigDirectory() string {
 // default configuration file for this tool. This file is only consulted
 // when there is no project-level configuration file.
 func getDefaultAppConfigFilename() string {
-	return path.Join(getDefaultConfigDirectory(), configFilename)
+	return path.Join(getDefaultConfigDirectory(), dev.ConfigFileDefault)
 }
 
 // locateConfigFile attempts to locate the path at which the configuration file
@@ -312,7 +307,7 @@ func locateConfigFile() string {
 	currentConfigFile := ""
 	devConfig := ""
 	for {
-		currentConfigFile = path.Join(currentDir, configFilename)
+		currentConfigFile = path.Join(currentDir, dev.ConfigFileDefault)
 		if _, err := os.Stat(currentConfigFile); err == nil {
 			devConfig = currentConfigFile
 			break

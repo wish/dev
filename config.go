@@ -14,9 +14,12 @@ const (
 	projectShellDefault           = "/bin/bash"
 	registryTimeoutSecondsDefault = 2
 	registryContinueOnFail        = false
-	// LogLevelDefault is the log level used when one has not been specified in an
-	// environment variable or in a configuration file.
+	// LogLevelDefault is the log level used when one has not been
+	// specified in an environment variable or in a configuration file.
 	LogLevelDefault = "info"
+	// ConfigFileDefault is the default filename for the configuration file
+	// for this program.
+	ConfigFileDefault = ".dev.yml"
 )
 
 var directoriesDefault = []string{"."}
