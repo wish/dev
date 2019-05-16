@@ -19,7 +19,6 @@ import (
 )
 
 var (
-	cfgFile, logLevel, projectDirectories string
 	// BuildSha is used by the build to include the git sha in the --version output
 	BuildSha = "BuildSha not set (use Makefile to set)"
 	// BuildDate is used by the build to include the build date in the --version output
@@ -42,16 +41,18 @@ var rootCmd = &cobra.Command{
 		"on top of Docker Compose projects.",
 }
 
-func configureLogging() {
-	level := viper.GetString("log.level")
-	logRusLevel, err := log.ParseLevel(level)
+func configureLogging(logLevel string) {
+	if logLevel == "" {
+		logLevel = dev.LogLevelDefault
+	}
+	logRusLevel, err := log.ParseLevel(logLevel)
 	if err != nil {
 		log.Fatal(err)
 	}
 	log.SetLevel(logRusLevel)
 	log.SetOutput(os.Stderr)
 	// print after setting so this shows up/doesn't show up as appropriate
-	log.Debugf("Set logging to %s", level)
+	log.Debugf("Set logging to %s", logLevel)
 }
 
 // Execute adds all child commands to the root command and sets flags
@@ -238,28 +239,28 @@ func addProjects(cmd *cobra.Command, config *dev.Config) error {
 }
 
 func init() {
-	rootCmd.PersistentFlags().StringVarP(&cfgFile, "config", "c", "", "configuration file")
-	rootCmd.PersistentFlags().StringVarP(&logLevel, "log", "l", "warn", "log level (warn, info, debug)")
-	rootCmd.PersistentFlags().StringVarP(&projectDirectories, "directories", "d",
-		".", "Directories to search for docker-compose.yml files")
+	viper.AutomaticEnv()
+	viper.SetEnvPrefix("DEV")
 
-	if err := viper.BindPFlag("log.level", rootCmd.PersistentFlags().Lookup("log")); err != nil {
-		fmt.Printf("Error binding to log.level %s", err)
-		os.Exit(1)
+	if err := viper.BindEnv("CONFIG"); err != nil {
+		log.Fatalf("error binding to DEV_CONFIG environment variable: %s", err)
+	}
+	if err := viper.BindEnv("LOGS"); err != nil {
+		log.Fatalf("error binding to DEV_LOGS environment variable: %s", err)
 	}
 
-	// Set logging based on command line only (this is not working)
-	configureLogging()
+	// XXX: no global command line flags (persistentFlags) b/c they
+	// DisableFlagParsing is set for the 'sh' command so users do not have to
+	// surround command line with quotes or preceed with --.
 
-	if err := viper.BindPFlag("directories", rootCmd.PersistentFlags().Lookup("directories")); err != nil {
-		fmt.Printf("Error binding to directories %s", err)
-		os.Exit(1)
-	}
-
+	// set default log level, use DEV_LOGS environment variable if specified (info, debug, warn)
+	level := viper.GetString("LOGS")
+	configureLogging(level)
 	initConfig()
+	// reconfigure logging with config from config file
+	configureLogging(config.Log.Level)
 
-	// Take configuration file into account for logging preference
-	configureLogging()
+	// adjust log level config file specification
 
 	// following removes the following: WARNING: Found orphan containers for this project.
 	err := os.Setenv("COMPOSE_IGNORE_ORPHANS", "True")
@@ -333,6 +334,7 @@ func locateConfigFile() string {
 
 // initConfig locates the configuration file and loads it into the Config
 func initConfig() {
+	cfgFile := viper.GetString("FILE")
 	if cfgFile != "" {
 		log.Debugf("Using command line specified config file: %s", cfgFile)
 		// specified on the command line
@@ -348,8 +350,6 @@ func initConfig() {
 			log.Debugln("No configuration file found")
 		}
 	}
-	viper.AutomaticEnv()
-	viper.SetEnvPrefix("DEV")
 
 	if cfgFile != "" {
 		if err := viper.ReadInConfig(); err != nil {

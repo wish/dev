@@ -14,6 +14,9 @@ const (
 	projectShellDefault           = "/bin/bash"
 	registryTimeoutSecondsDefault = 2
 	registryContinueOnFail        = false
+	// LogLevelDefault is the log level used when one has not been specified in an
+	// environment variable or in a configuration file.
+	LogLevelDefault = "info"
 )
 
 // Config is the datastructure into which we unmarshal the dev configuration
@@ -243,6 +246,10 @@ func setDefaults(config *Config) {
 		if project.Shell == "" {
 			project.Shell = projectShellDefault
 		}
+	}
+
+	if config.Log.Level == "" {
+		config.Log.Level = LogLevelDefault
 	}
 }
 
