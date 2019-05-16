@@ -258,13 +258,15 @@ func setDefaults(config *Config) {
 func ExpandConfig(filename string, config *Config) {
 	// Ensure that relative paths used in the configuration file are relative
 	// the actual project, not to the location of a link.
-	fi, err := os.Lstat(filename)
-	if err != nil {
-		log.Fatalf("Error fetching file info for %s: %s", filename, err)
-	}
-	if fi.Mode()&os.ModeSymlink != 0 {
-		if filename, err = os.Readlink(filename); err != nil {
-			log.Fatalf("ReadLink error for config file: %s", filename)
+	if filename != "" {
+		fi, err := os.Lstat(filename)
+		if err != nil {
+			log.Fatalf("Error fetching file info for %s: %s", filename, err)
+		}
+		if fi.Mode()&os.ModeSymlink != 0 {
+			if filename, err = os.Readlink(filename); err != nil {
+				log.Fatalf("ReadLink error for config file: %s", filename)
+			}
 		}
 	}
 	config.Filename = filename
