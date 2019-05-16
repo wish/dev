@@ -1,7 +1,8 @@
 SHA  := $(shell git rev-parse --short HEAD)
 DATE := $(shell date +"%a %b %d %T %Y")
 UNAME_S := $(shell uname -s | tr A-Z a-z)
-GOFILES_BUILD := $(shell find . -type f -iname "*.go" | grep -v "^./vendor")
+GOFILES_WATCH := find . -type f -iname "*.go"
+GOFILES_BUILD := $(shell find . -type f -iname "*.go")
 GO_PACKAGES := $(shell go list ./...)
 
 default: \
@@ -39,3 +40,8 @@ build/darwin/dev: ${GOFILES_BUILD} test
 # make a link to the executable for this OS type for convience
 build/dev:
 	$(shell ln -s ${UNAME_S}/dev build/dev)
+
+# Rerun build on change
+.PHONY: watch
+watch:
+	$(GOFILES_WATCH) | entr -rc $(MAKE)
