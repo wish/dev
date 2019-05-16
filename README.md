@@ -31,20 +31,20 @@ Dev will search the current directory and its parent directory until it locates 
 is .dev.toml but can be overridden with the --config flag. If a per-project configuration file cannot be found, dev will look in
 your home directory and finally in $XDG_CONFIG_HOME/dev for one. If a configuration file is not found, dev will assume you want to use the
 current directory as the only project directory and will search for docker-compose.yml files there. For each docker-compose.yml
-found, dev will create a number of commands for the project. For example, if your docker-compose.yml is located in directory /home/shaw/Projects/foo
+found, dev will create a number of commands for the project. For example, if your docker-compose.yml is located in directory /home/svrana/Projects/foo
 dev will create a command named 'foo' and a number of subcommands. These subcommands can be listed by running `dev foo --help`.
 
 If you require more than one docker-compose.yml for your project, you can specify these in the .dev.toml file. For example,
    for the Foo project which has a layout like this:
 
 ```
-   /home/shaw/Projects/foo:
+   /home/svrana/Projects/foo:
       docker-compose.yml
-  /home/shaw/Projects/foo/docker
+  /home/svrana/Projects/foo/docker
       docker-compose.shared.yml
 ```
 
-You might have /home/shaw/Projects/.dev.toml which contains something like this:
+You might have /home/svrana/Projects/.dev.toml which contains something like this:
 
  ```toml
 
@@ -83,3 +83,13 @@ for your project.
 ## up
 
 Start the containers for the specified project.
+
+## sh
+
+Run without arguments this command runs an interactive shell on the project container. If run with arguments,
+this command runs the arguments specified on the project container with the shell specified in the configuration
+file (or /bin/bash by default). If you run this command from a subdirectory of your project directory, this command
+will first change directories such that relative commands from your directory on the host can be run. If run from
+outside of your project directory, the starting directory is defaults to the WORK_DIR specified in your project's
+Dockerfile.
+
