@@ -19,10 +19,13 @@ const (
 	LogLevelDefault = "info"
 )
 
+var directoriesDefault = []string{"."}
+
 // Config is the datastructure into which we unmarshal the dev configuration
 // file.
 type Config struct {
-	Log                LogConfig   `mapstructure:"log"`
+	Log LogConfig `mapstructure:"log"`
+	// List of directories to search for docker-compose.yml files
 	ProjectDirectories []string    `mapstructure:"directories"`
 	Projects           []*Project  `mapstructure:"projects"`
 	Registries         []*Registry `mapstructure:"registries"`
@@ -195,7 +198,7 @@ func expandProject(config *Config, project *Project) {
 	}
 }
 
-func expandEnvVariables(config *Config) {
+func expand(config *Config) {
 	// See if any evironment variables are used in the Project
 	// Directories and expand as necessary.
 	for i, dir := range config.ProjectDirectories {
@@ -216,9 +219,18 @@ func expandEnvVariables(config *Config) {
 }
 
 func expandRelativeDirectories(config *Config) {
+	if len(config.ProjectDirectories) == 0 {
+		config.ProjectDirectories = directoriesDefault
+	}
+
 	for i, dir := range config.ProjectDirectories {
 		if !strings.HasPrefix(dir, "/") {
-			configDir := filepath.Dir(config.Filename)
+			var configDir string
+			if config.Filename == "" {
+				configDir, _ = os.Getwd()
+			} else {
+				configDir = filepath.Dir(config.Filename)
+			}
 			config.ProjectDirectories[i] = path.Clean(path.Join(configDir, dir))
 		}
 	}
@@ -271,8 +283,8 @@ func ExpandConfig(filename string, config *Config) {
 	}
 	config.Filename = filename
 
-	expandEnvVariables(config)
 	expandRelativeDirectories(config)
+	expand(config)
 	setDefaults(config)
 
 	// Find individual projects by locating docker-compose.yml files in the
