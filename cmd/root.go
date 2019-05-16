@@ -361,6 +361,5 @@ func initConfig() {
 		log.Fatal(err)
 	}
 
-	config.Filename = cfgFile
-	dev.ExpandConfig(&config)
+	dev.ExpandConfig(cfgFile, &config)
 }

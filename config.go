@@ -142,8 +142,8 @@ func projectNameFromPath(projectPath string) string {
 // getOrCreateProjectConfig returns the existing Project struct for the
 // specified project path (i.e., the full path to the project). Will create a
 // Project configuration if there is not an existing user-provided one.
-func getOrCreateProjectConfig(devConfig *Config, projectPath string) *Project {
-	for _, project := range devConfig.Projects {
+func getOrCreateProjectConfig(config *Config, projectPath string) *Project {
+	for _, project := range config.Projects {
 		//log.Infof("Found project with name: %s", project.Name)
 		found := false
 		if project.Directory == projectPath {
@@ -178,50 +178,68 @@ func getOrCreateProjectConfig(devConfig *Config, projectPath string) *Project {
 		project.DockerComposeFilenames = append(project.DockerComposeFilenames, composePath)
 	}
 
-	devConfig.Projects = append(devConfig.Projects, project)
+	config.Projects = append(config.Projects, project)
 	return project
 }
 
-func expandProject(devConfig *Config, project *Project) {
+func expandProject(config *Config, project *Project) {
 	if project.Directory != "" && !project.Hidden {
 		composeFiles := locateDockerComposeFiles(project.Directory, project.SearchDepth)
 		log.Debugf("(%s) Found docker_compose.yml files: %s", project.Directory, strings.Join(composeFiles, ", "))
 		for _, composePath := range composeFiles {
-			getOrCreateProjectConfig(devConfig, path.Dir(composePath))
+			getOrCreateProjectConfig(config, path.Dir(composePath))
 		}
 	}
 }
 
-func expandEnvVariables(devConfig *Config) {
+func expandEnvVariables(config *Config) {
 	// See if any evironment variables are used in the Project
 	// Directories and expand as necessary.
-	for i, dir := range devConfig.ProjectDirectories {
-		devConfig.ProjectDirectories[i] = os.ExpandEnv(dir)
+	for i, dir := range config.ProjectDirectories {
+		config.ProjectDirectories[i] = os.ExpandEnv(dir)
 	}
 
 	// Expand environment variables used in project directories..
-	for _, project := range devConfig.Projects {
+	for _, project := range config.Projects {
 		project.Directory = os.ExpandEnv(project.Directory)
 	}
 
 	// Expand environment vars used in docker_compose_file locations
-	for _, project := range devConfig.Projects {
+	for _, project := range config.Projects {
 		for i, composeFile := range project.DockerComposeFilenames {
 			project.DockerComposeFilenames[i] = os.ExpandEnv(composeFile)
 		}
 	}
 }
 
-func setDefaults(devConfig *Config) {
+func expandRelativeDirectories(config *Config) {
+	for i, dir := range config.ProjectDirectories {
+		if !strings.HasPrefix(dir, "/") {
+			configDir := filepath.Dir(config.Filename)
+			config.ProjectDirectories[i] = path.Clean(path.Join(configDir, dir))
+		}
+	}
+
+	for _, project := range config.Projects {
+		for i, composeFile := range project.DockerComposeFilenames {
+			if !strings.HasPrefix(composeFile, "/") {
+				configDir := filepath.Dir(config.Filename)
+				project.DockerComposeFilenames[i] = path.Clean(path.Join(configDir, composeFile))
+			}
+		}
+	}
+}
+
+func setDefaults(config *Config) {
 	// Need to be smarter here.. Users unable to specify 0 here, which is
 	// a reasonable default for many values.
-	for _, registry := range devConfig.Registries {
+	for _, registry := range config.Registries {
 		if registry.TimeoutSeconds == 0 {
 			registry.TimeoutSeconds = registryTimeoutSecondsDefault
 		}
 	}
 
-	for _, project := range devConfig.Projects {
+	for _, project := range config.Projects {
 		if project.Shell == "" {
 			project.Shell = projectShellDefault
 		}
@@ -230,19 +248,33 @@ func setDefaults(devConfig *Config) {
 
 // ExpandConfig makes modifications to the configuration structure
 // provided by the user before it is used by dev-cli.
-func ExpandConfig(devConfig *Config) {
-	expandEnvVariables(devConfig)
-	setDefaults(devConfig)
+func ExpandConfig(filename string, config *Config) {
+	// Ensure that relative paths used in the configuration file are relative
+	// the actual project, not to the location of a link.
+	fi, err := os.Lstat(filename)
+	if err != nil {
+		log.Fatalf("Error fetching file info for %s: %s", filename, err)
+	}
+	if fi.Mode()&os.ModeSymlink != 0 {
+		if filename, err = os.Readlink(filename); err != nil {
+			log.Fatalf("ReadLink error for config file: %s", filename)
+		}
+	}
+	config.Filename = filename
+
+	expandEnvVariables(config)
+	expandRelativeDirectories(config)
+	setDefaults(config)
 
 	// Find individual projects by locating docker-compose.yml files in the
 	// specified project directories.  Create/synchronize a Project
 	// configuration for each found Project.
-	for _, projectDir := range devConfig.ProjectDirectories {
+	for _, projectDir := range config.ProjectDirectories {
 		// see if there is a project configuration
-		getOrCreateProjectConfig(devConfig, projectDir)
+		getOrCreateProjectConfig(config, projectDir)
 	}
 
-	for _, projectConfig := range devConfig.Projects {
-		expandProject(devConfig, projectConfig)
+	for _, project := range config.Projects {
+		expandProject(config, project)
 	}
 }
