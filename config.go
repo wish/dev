@@ -23,6 +23,8 @@ type Config struct {
 	ProjectDirectories []string    `mapstructure:"directories"`
 	Projects           []*Project  `mapstructure:"projects"`
 	Registries         []*Registry `mapstructure:"registries"`
+	// Filename is the full path of the configuration file
+	Filename string
 }
 
 // LogConfig holds the logging related configuration.

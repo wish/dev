@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"path/filepath"
 	"runtime"
 	"strings"
 
@@ -43,7 +44,6 @@ var rootCmd = &cobra.Command{
 
 func configureLogging() {
 	level := viper.GetString("log.level")
-	//fmt.Printf("configureLogging: log.level: %s loglevel: %s\n", level, logLevel)
 	logRusLevel, err := log.ParseLevel(level)
 	if err != nil {
 		log.Fatal(err)
@@ -68,6 +68,17 @@ func quote(str string) string {
 	return fmt.Sprintf("%s", str)
 }
 
+func runCommand(name string, args []string) {
+	log.Debugf("Running: %s %s", name, strings.Join(args, " "))
+	command := exec.Command(name, args...)
+
+	command.Stdout = os.Stdout
+	command.Stderr = os.Stderr
+	command.Stdin = os.Stdin
+
+	command.Run()
+}
+
 func runDockerCompose(cmd string, composePaths []string, args ...string) {
 	var cmdLine []string
 
@@ -82,17 +93,26 @@ func runDockerCompose(cmd string, composePaths []string, args ...string) {
 		cmdLine = append(cmdLine, arg)
 	}
 
-	log.Debugf("Running: docker-compose %s", strings.Join(cmdLine, " "))
-	command := exec.Command("docker-compose", cmdLine...)
-
-	command.Stdout = os.Stdout
-	command.Stderr = os.Stderr
-	command.Stdin = os.Stdin
-
-	command.Run()
+	runCommand("docker-compose", cmdLine)
 }
 
-func addProjectCommands(projectCmd *cobra.Command, dev *dev.Config, project *dev.Project) {
+func runOnContainer(project *dev.Project, cmds ...string) {
+	var cmdLine []string
+
+	for _, path := range project.DockerComposeFilenames {
+		cmdLine = append(cmdLine, "-f", path)
+	}
+	cmdLine = append(cmdLine, "exec", project.Name)
+
+	// append any additional arguments or flags, i.e., -d
+	for _, cmd := range cmds {
+		cmdLine = append(cmdLine, cmd)
+	}
+
+	runCommand("docker-compose", cmdLine)
+}
+
+func addProjectCommands(projectCmd *cobra.Command, config *dev.Config, project *dev.Project) {
 	build := &cobra.Command{
 		Use:   "build",
 		Short: "Build the " + project.Name + " container (and its dependencies)",
@@ -106,7 +126,7 @@ func addProjectCommands(projectCmd *cobra.Command, dev *dev.Config, project *dev
 		Use:   "up",
 		Short: "Create and start the " + project.Name + " containers",
 		Run: func(cmd *cobra.Command, args []string) {
-			for _, r := range dev.Registries {
+			for _, r := range config.Registries {
 				err := registry.Login(r)
 				if err != nil {
 					msg := fmt.Sprintf("Failed to login to %s registry: %s", r.Name, err)
@@ -145,19 +165,42 @@ func addProjectCommands(projectCmd *cobra.Command, dev *dev.Config, project *dev
 		// string-- in the name of usability.
 		DisableFlagParsing: true,
 		Run: func(cmd *cobra.Command, args []string) {
-			cmdLine := []string{project.Name, project.Shell}
-			// user wants to launch a command, not a shell.
+			// Get current directory, attempt to find its location
+			// on the container and cd to it. This allows developers to
+			// use relative directories like they would in a non-containerized
+			// development environment.
+			cwd, err := os.Getwd()
+			if err != nil {
+				log.Fatalf("Failed to get current directory: %s", err)
+			}
+			configDir := filepath.Dir(config.Filename)
+
+			relativePath := ""
+			if strings.HasPrefix(cwd, configDir) {
+				start := strings.Index(cwd, configDir) + len(configDir) + 1
+				if start < len(cwd) {
+					relativePath = cwd[start:]
+				} else {
+					relativePath = "."
+				}
+			}
+
 			if len(args) > 0 {
 				// assume a command starting with a dash is
-				// a cry for help
-				if strings.HasPrefix(args[0], ("-")) {
+				// a cry for help. Make this smarter..
+				if strings.HasPrefix(args[0], "-") {
 					cmd.Help()
 					return
 				}
-				cmdLine = append(cmdLine, "-c")
-				cmdLine = append(cmdLine, quote(strings.Join(args, " ")))
+			} else {
+				// no subcommands, so just provide a shell
+				args = append(args, project.Shell)
 			}
-			runDockerCompose("exec", project.DockerComposeFilenames, cmdLine...)
+
+			cmdLine := []string{project.Shell, "-c",
+				fmt.Sprintf("cd %s ; %s", relativePath, strings.Join(args, " "))}
+
+			runOnContainer(project, cmdLine...)
 		},
 	}
 	projectCmd.AddCommand(sh)
@@ -170,7 +213,11 @@ its docker-compose.yml file is placed. It does not stop or destroy any container
 may have been brought up to support this project, which is the case for projects that
 use more one docker-compose.yml file.`,
 		Run: func(cmd *cobra.Command, args []string) {
-			runDockerCompose("down", project.DockerComposeFilenames, project.Name)
+			i := len(project.DockerComposeFilenames)
+			// for now we assume that the project configuration is in the last compose
+			// file listed, which it should be.. would be better to parse the configs
+			// and verify assumptions.
+			runDockerCompose("down", []string{project.DockerComposeFilenames[i-1]})
 		},
 	}
 	projectCmd.AddCommand(down)
@@ -191,9 +238,9 @@ func addProjects(cmd *cobra.Command, config *dev.Config) error {
 }
 
 func init() {
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "configuration file")
-	rootCmd.PersistentFlags().StringVar(&logLevel, "log", "info", "log level (warn, info, debug)")
-	rootCmd.PersistentFlags().StringVar(&projectDirectories, "directories",
+	rootCmd.PersistentFlags().StringVarP(&cfgFile, "config", "c", "", "configuration file")
+	rootCmd.PersistentFlags().StringVarP(&logLevel, "log", "l", "warn", "log level (warn, info, debug)")
+	rootCmd.PersistentFlags().StringVarP(&projectDirectories, "directories", "d",
 		".", "Directories to search for docker-compose.yml files")
 
 	if err := viper.BindPFlag("log.level", rootCmd.PersistentFlags().Lookup("log")); err != nil {
@@ -314,5 +361,6 @@ func initConfig() {
 		log.Fatal(err)
 	}
 
+	config.Filename = cfgFile
 	dev.ExpandConfig(&config)
 }
