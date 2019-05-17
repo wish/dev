@@ -158,6 +158,7 @@ func addProjects(cmd *cobra.Command, config *dev.Config) error {
 			Aliases: project.Aliases,
 		}
 		rootCmd.AddCommand(cmd)
+
 		addProjectCommands(cmd, config, project)
 	}
 	return nil

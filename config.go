@@ -31,9 +31,9 @@ var directoriesDefault = []string{"."}
 type Config struct {
 	Log LogConfig `mapstructure:"log"`
 	// List of directories to search for docker-compose.yml files
-	ProjectDirectories []string    `mapstructure:"directories"`
-	Projects           []*Project  `mapstructure:"projects"`
-	Registries         []*Registry `mapstructure:"registries"`
+	ProjectDirectories []string            `mapstructure:"directories"`
+	Projects           map[string]*Project `mapstructure:"projects"`
+	Registries         []*Registry         `mapstructure:"registries"`
 	// Filename is the full path of the configuration file
 	Filename string
 	// Networks are a list of the networks managed by dev. A network
@@ -61,7 +61,8 @@ type Project struct {
 	// directory is assumed to be at the same location as the
 	// DockerCompose.yml file.
 	Directory string `mapstructure:"directory"`
-	Name      string `mapstructure:"name"`
+	// TODO: unused remove. Currently set to the key name.
+	Name string `mapstructure:"name"`
 	// Alternate names for this project
 	Aliases []string `mapstructure:"aliases"`
 	// Whether project should be included for use by this project, default false
@@ -194,7 +195,7 @@ func getOrCreateProjectConfig(config *Config, projectPath string) *Project {
 		project.DockerComposeFilenames = append(project.DockerComposeFilenames, composePath)
 	}
 
-	config.Projects = append(config.Projects, project)
+	config.Projects[project.Name] = project
 	return project
 }
 
@@ -305,7 +306,8 @@ func ExpandConfig(filename string, config *Config) {
 		getOrCreateProjectConfig(config, projectDir)
 	}
 
-	for _, project := range config.Projects {
+	for name, project := range config.Projects {
+		project.Name = name
 		expandProject(config, project)
 	}
 }

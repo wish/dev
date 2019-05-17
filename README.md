@@ -57,8 +57,7 @@ The /home/svrana/Projects/foo/.dev.yml might contain something like this:
  ```yaml
 
 projects:
-  -
-    name="foo"
+  foo:
     docker_compose_files:
       - "docker/docker-compose.shared.yml"
       - "docker-compose.yml"
