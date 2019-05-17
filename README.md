@@ -46,12 +46,13 @@ a layout like this:
 
 ```
    /home/svrana/Projects/foo:
+      .dev.yaml
       docker-compose.yml
   /home/svrana/Projects/foo/docker
       docker-compose.shared.yml
 ```
 
-You might have /home/svrana/Projects/.dev.toml which contains something like this:
+The /home/svrana/Projects/foo/.dev.yml might contain something like this:
 
  ```yaml
 
@@ -64,8 +65,8 @@ projects:
 
  ```
 
-Then when you run 'dev foo build', the dev will provide both docker-compose.yml configuration files to docker-compose with
-the -f flag.
+Then when you run 'dev foo build', the dev will provide both docker-compose.yml
+configuration files to docker-compose with the -f flag.
 
 
 # Overview
