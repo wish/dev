@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/wish/dev"
@@ -30,9 +31,19 @@ func ProjectCmdUpCreate(config *dev.Config, project *dev.Project) *cobra.Command
 				}
 			}
 			for name, opts := range config.Networks {
-				log.Infof("Creating %s network", name)
-				if err := docker.NetworkCreate(name, opts); err != nil {
+				exists, err := docker.NetworkExists(name)
+				if err != nil {
+					err = errors.Wrapf(err, "Error checking if network %s exists", name)
 					log.Fatal(err)
+				}
+
+				if !exists {
+					log.Infof("Creating %s network", name)
+					if err := docker.NetworkCreate(name, opts); err != nil {
+						log.Fatal(err)
+					}
+				} else {
+					log.Debugf("Network %s already exists", name)
 				}
 
 			}

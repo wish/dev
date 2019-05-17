@@ -22,9 +22,12 @@ dev is a command line tool that provides a thin layer of porcelain on top of [Do
 
 # Installing
 
-```bash
-  go get github.com/wish/dev
-```
+Binaries available for linux and and osx here.
+
+# Contributing
+
+You will need a current version of [golang](https://golang.org/dl/) that supports
+modules to build this project.
 
 # Configuration
 
@@ -45,27 +48,42 @@ specify these in the .dev.yml file. For example, for the Foo project which has
 a layout like this:
 
 ```
-   /home/svrana/Projects/foo:
-      .dev.yaml
-      docker-compose.yml
-  /home/svrana/Projects/foo/docker
-      docker-compose.shared.yml
+  $HOME/Projects/foo:
+    .dev.yaml
+    docker-compose.yml
+
+  $HOME/Projects/foo/docker
+    docker-compose.shared.yml
 ```
 
-The /home/svrana/Projects/foo/.dev.yml might contain something like this:
+The $HOME/Projects/foo/.dev.yml might contain something like this:
 
  ```yaml
-
 projects:
   foo:
     docker_compose_files:
       - "docker/docker-compose.shared.yml"
       - "docker-compose.yml"
+    depends: ["my-external-network"]
 
+networks:
+  my-external-network:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 173.16.242.0/16
  ```
 
-Then when you run 'dev foo build', the dev will provide both docker-compose.yml
-configuration files to docker-compose with the -f flag.
+Running 'dev foo build' will provide both docker-compose.yml configuration
+files to docker-compose with the -f flag.
+
+When 'dev foo up' is run, "my-external-network" will be created if it does not
+exist.
+
+Run 'dev foo sh' to get a shell in the container or 'dev foo sh <command>' to
+run command in your container (assuming you've mapped your project directory as
+a volume into the container.
 
 
 # Overview
@@ -107,4 +125,3 @@ command will first change directories such that relative commands from your
 directory on the host can be run. If run from outside of your project
 directory the starting directory defaults to the WORKDIR specified in the
 project's Dockerfile.
-
