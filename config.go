@@ -7,6 +7,8 @@ import (
 	"strings"
 
 	log "github.com/sirupsen/logrus"
+
+	"github.com/docker/docker/api/types"
 )
 
 const (
@@ -34,6 +36,11 @@ type Config struct {
 	Registries         []*Registry `mapstructure:"registries"`
 	// Filename is the full path of the configuration file
 	Filename string
+	// Networks are a list of the networks managed by dev. A network
+	// will be created automatically as required by dev if it is listed
+	// as a dependency of your project. These are networks that are used
+	// as 'external networks' in your docker-compose configuration.
+	Networks map[string]*types.NetworkCreate `mapstructure:"networks"`
 }
 
 // LogConfig holds the logging related configuration.

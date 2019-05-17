@@ -11,6 +11,7 @@ import (
 
 	log "github.com/sirupsen/logrus"
 	"github.com/wish/dev"
+	"github.com/wish/dev/docker"
 	"github.com/wish/dev/registry"
 
 	"github.com/mitchellh/go-homedir"
@@ -134,6 +135,13 @@ func addProjectCommands(projectCmd *cobra.Command, config *dev.Config, project *
 
 				}
 			}
+			for name, opts := range config.Networks {
+				log.Infof("Creating %s network", name)
+				if err := docker.NetworkCreate(name, opts); err != nil {
+					log.Fatal(err)
+				}
+
+			}
 			runDockerCompose("up", project.DockerComposeFilenames, "-d")
 			runDockerCompose("logs", project.DockerComposeFilenames, "-f", project.Name)
 		},
@@ -182,8 +190,8 @@ func addProjectCommands(projectCmd *cobra.Command, config *dev.Config, project *
 			}
 
 			if len(args) > 0 {
-				// assume a command starting with a dash is
-				// a cry for help. Make this smarter..
+				// assume a command starting with a dash is a
+				// cry for help. Make this smarter..
 				if strings.HasPrefix(args[0], "-") {
 					cmd.Help()
 					return
