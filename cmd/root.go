@@ -5,14 +5,11 @@ import (
 	"os"
 	"os/exec"
 	"path"
-	"path/filepath"
 	"runtime"
 	"strings"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/wish/dev"
-	"github.com/wish/dev/docker"
-	"github.com/wish/dev/registry"
 
 	"github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
@@ -119,33 +116,7 @@ func addProjectCommands(projectCmd *cobra.Command, config *dev.Config, project *
 	}
 	projectCmd.AddCommand(build)
 
-	up := &cobra.Command{
-		Use:   "up",
-		Short: "Create and start the " + project.Name + " containers",
-		Run: func(cmd *cobra.Command, args []string) {
-			for _, r := range config.Registries {
-				err := registry.Login(r)
-				if err != nil {
-					msg := fmt.Sprintf("Failed to login to %s registry: %s", r.Name, err)
-					if r.ContinueOnFailure {
-						log.Warn(msg)
-					} else {
-						log.Fatal(msg)
-					}
-
-				}
-			}
-			for name, opts := range config.Networks {
-				log.Infof("Creating %s network", name)
-				if err := docker.NetworkCreate(name, opts); err != nil {
-					log.Fatal(err)
-				}
-
-			}
-			runDockerCompose("up", project.DockerComposeFilenames, "-d")
-			runDockerCompose("logs", project.DockerComposeFilenames, "-f", project.Name)
-		},
-	}
+	up := ProjectCmdUpCreate(config, project)
 	projectCmd.AddCommand(up)
 
 	ps := &cobra.Command{
@@ -157,56 +128,7 @@ func addProjectCommands(projectCmd *cobra.Command, config *dev.Config, project *
 	}
 	projectCmd.AddCommand(ps)
 
-	// needs work here... to pass args, gotta quote everything... -- doesn't work, etc.
-	// if working directory is within the project, then the context of the command
-	// should match...should
-	sh := &cobra.Command{
-		Use:   "sh",
-		Short: "Get a shell on the " + project.Name + " container",
-		Args:  cobra.ArbitraryArgs,
-		// Need to handle the flags manually. We do this so that we can
-		// send in flags to the container without quoting the entire
-		// string-- in the name of usability.
-		DisableFlagParsing: true,
-		Run: func(cmd *cobra.Command, args []string) {
-			// Get current directory, attempt to find its location
-			// on the container and cd to it. This allows developers to
-			// use relative directories like they would in a non-containerized
-			// development environment.
-			cwd, err := os.Getwd()
-			if err != nil {
-				log.Fatalf("Failed to get current directory: %s", err)
-			}
-			configDir := filepath.Dir(config.Filename)
-
-			relativePath := ""
-			if strings.HasPrefix(cwd, configDir) {
-				start := strings.Index(cwd, configDir) + len(configDir) + 1
-				if start < len(cwd) {
-					relativePath = cwd[start:]
-				} else {
-					relativePath = "."
-				}
-			}
-
-			if len(args) > 0 {
-				// assume a command starting with a dash is a
-				// cry for help. Make this smarter..
-				if strings.HasPrefix(args[0], "-") {
-					cmd.Help()
-					return
-				}
-			} else {
-				// no subcommands, so just provide a shell
-				args = append(args, project.Shell)
-			}
-
-			cmdLine := []string{project.Shell, "-c",
-				fmt.Sprintf("cd %s ; %s", relativePath, strings.Join(args, " "))}
-
-			runOnContainer(project, cmdLine...)
-		},
-	}
+	sh := ProjectCmdShCreate(config, project)
 	projectCmd.AddCommand(sh)
 
 	down := &cobra.Command{
