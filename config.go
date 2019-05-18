@@ -279,6 +279,10 @@ func setDefaults(config *Config) {
 // ExpandConfig makes modifications to the configuration structure
 // provided by the user before it is used by dev-cli.
 func ExpandConfig(filename string, config *Config) {
+	if config.Projects == nil {
+		config.Projects = make(map[string]*Project)
+	}
+
 	// Ensure that relative paths used in the configuration file are relative
 	// the actual project, not to the location of a link.
 	if filename != "" {
