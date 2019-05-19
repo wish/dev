@@ -270,9 +270,9 @@ func locateConfigFile() string {
 
 // initConfig locates the configuration file and loads it into the Config
 func initConfig() {
-	cfgFile := viper.GetString("FILE")
+	cfgFile := viper.GetString("CONFIG")
 	if cfgFile != "" {
-		log.Debugf("Using command line specified config file: %s", cfgFile)
+		log.Debugf("Using env variable specified config file: %s", cfgFile)
 		// specified on the command line
 		viper.SetConfigFile(cfgFile)
 	} else {
