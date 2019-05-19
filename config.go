@@ -19,10 +19,6 @@ const (
 	// LogLevelDefault is the log level used when one has not been
 	// specified in an environment variable or in a configuration file.
 	LogLevelDefault = "info"
-	// SearchDepthDefault is the default number of subdirectories under
-	// the specified ProjectDirectories searched for docker-compose config
-	// files.
-	SearchDepthDefault = 2
 	// ConfigFileDefault is the default filename for the configuration file
 	// for this program.
 	ConfigFileDefault = ".dev.yml"
@@ -35,21 +31,17 @@ to your project .dev.yml from $HOME.
 `
 )
 
-var directoriesDefault = []string{"."}
-
 // Config is the datastructure into which we unmarshal the dev configuration
 // file.
 type Config struct {
-	Log LogConfig `mapstructure:"log"`
-	// List of directories to search for docker-compose.yml files
-	ProjectDirectories []string `mapstructure:"directories"`
-	// The number of sub-directories undeath a ProjectDirectory that is
-	// searched for DockerCompose files.
-	SearchDepth int                 `mapstructure:"depth"`
-	Projects    map[string]*Project `mapstructure:"projects"`
-	Registries  []*Registry         `mapstructure:"registries"`
+	Log        LogConfig           `mapstructure:"log"`
+	Projects   map[string]*Project `mapstructure:"projects"`
+	Registries []*Registry         `mapstructure:"registries"`
 	// Filename is the full path of the configuration file
 	Filename string
+	// Dir is either the location of the config file or the current
+	// working directory if there is no config file.
+	Dir string
 	// Networks are a list of the networks managed by dev. A network
 	// will be created automatically as required by dev if it is listed
 	// as a dependency of your project. These are networks that are used
@@ -134,43 +126,12 @@ func directoryContainsDockerComposeConfig(directory string) bool {
 	return false
 }
 
-func locateDockerComposeFiles(startDirectory string, depth int) []string {
-	var configs []string
-
-	startDepth := strings.Count(startDirectory, "/")
-	filepath.Walk(startDirectory, func(pathname string, info os.FileInfo, _ error) error {
-		endDepth := strings.Count(pathname, "/")
-
-		if endDepth-startDepth > depth {
-			//log.Debugf("Max depth reached, skipping: %s", pathname)
-			return filepath.SkipDir
-		}
-
-		if info.IsDir() {
-			if strings.HasPrefix(path.Base(pathname), ".") {
-				//log.Debugf("Skipping hidden directory: %s", pathname)
-				return filepath.SkipDir
-			}
-			if directoryContainsDockerComposeConfig(pathname) {
-				//log.Debugf("Found %s", dockerComposeFullPath(pathname))
-				configs = append(configs, dockerComposeFullPath(pathname))
-			}
-		}
-		return nil
-	})
-
-	return configs
-}
-
 func projectNameFromPath(projectPath string) string {
 	return path.Base(projectPath)
 }
 
-// getOrCreateProjectConfig returns the existing Project struct for the
-// specified project path (i.e., the full path to the project). Will create a
-// Project configuration if there is not an existing user-provided one.
-func getOrCreateProjectConfig(config *Config, projectPath string) *Project {
-	log.Debugf("getOrCreateProjectConfig: projectPath: %s", projectPath)
+func newProjectConfig(config *Config, projectPath string) *Project {
+	log.Debugf("newProjectConfig: projectPath: %s", projectPath)
 
 	for _, project := range config.Projects {
 		//log.Infof("Found project with name: %s", project.Name)
@@ -200,66 +161,18 @@ func getOrCreateProjectConfig(config *Config, projectPath string) *Project {
 	project := &Project{
 		Directory: projectPath,
 		Name:      projectNameFromPath(projectPath),
-	}
-	if directoryContainsDockerComposeConfig(projectPath) {
-		composePath := dockerComposeFullPath(projectPath)
-		project.DockerComposeFilenames = append(project.DockerComposeFilenames, composePath)
+		DockerComposeFilenames: []string{dockerComposeFullPath(projectPath)},
 	}
 
 	config.Projects[project.Name] = project
 	return project
 }
 
-func findProjectsIn(config *Config, dir string) {
-	composeFiles := locateDockerComposeFiles(dir, config.SearchDepth)
-	log.Debugf("(%s) Found docker_compose.yml files: %s", dir, strings.Join(composeFiles, ", "))
-	for _, composePath := range composeFiles {
-		getOrCreateProjectConfig(config, path.Dir(composePath))
-	}
-}
-
-func expand(config *Config) {
-	// See if any evironment variables are used in the Project
-	// Directories and expand as necessary.
-	for i, dir := range config.ProjectDirectories {
-		config.ProjectDirectories[i] = os.ExpandEnv(dir)
-	}
-
-	// Expand environment variables used in project directories..
-	for _, project := range config.Projects {
-		project.Directory = os.ExpandEnv(project.Directory)
-	}
-
-	// Expand environment vars used in docker_compose_file locations
-	for _, project := range config.Projects {
-		for i, composeFile := range project.DockerComposeFilenames {
-			project.DockerComposeFilenames[i] = os.ExpandEnv(composeFile)
-		}
-	}
-}
-
 func expandRelativeDirectories(config *Config) {
-	if len(config.ProjectDirectories) == 0 {
-		config.ProjectDirectories = directoriesDefault
-	}
-
-	for i, dir := range config.ProjectDirectories {
-		if !strings.HasPrefix(dir, "/") {
-			var configDir string
-			if config.Filename == "" {
-				configDir, _ = os.Getwd()
-			} else {
-				configDir = filepath.Dir(config.Filename)
-			}
-			config.ProjectDirectories[i] = path.Clean(path.Join(configDir, dir))
-		}
-	}
-
 	for _, project := range config.Projects {
 		for i, composeFile := range project.DockerComposeFilenames {
 			if !strings.HasPrefix(composeFile, "/") {
-				configDir := filepath.Dir(config.Filename)
-				project.DockerComposeFilenames[i] = path.Clean(path.Join(configDir, composeFile))
+				project.DockerComposeFilenames[i] = path.Clean(path.Join(config.Dir, composeFile))
 			}
 		}
 	}
@@ -292,8 +205,8 @@ func ExpandConfig(filename string, config *Config) {
 		config.Projects = make(map[string]*Project)
 	}
 
-	// Ensure that relative paths used in the configuration file are relative
-	// to the actual project, not to the location of a link.
+	// Ensure that relative paths used in the configuration file are
+	// relative to the actual project, not to the location of a link.
 	if filename != "" {
 		fi, err := os.Lstat(filename)
 		if err != nil {
@@ -305,9 +218,18 @@ func ExpandConfig(filename string, config *Config) {
 			}
 		}
 	}
-	config.Filename = filename
 
-	expand(config)
+	config.Filename = filename
+	if config.Filename == "" {
+		dir, err := os.Getwd()
+		if err != nil {
+			log.Fatalf("Error getting the current directory: %s", err)
+		}
+		config.Dir = dir
+	} else {
+		config.Dir = filepath.Dir(config.Filename)
+	}
+
 	expandRelativeDirectories(config)
 	setDefaults(config)
 
@@ -315,18 +237,11 @@ func ExpandConfig(filename string, config *Config) {
 		project.Name = name
 	}
 
-	// Find individual projects by locating docker-compose.yml files in the
-	// specified project directories.  Create/synchronize a Project
-	// configuration for each found Project....
-	for _, projectDir := range config.ProjectDirectories {
-		findProjectsIn(config, projectDir)
+	if directoryContainsDockerComposeConfig(config.Dir) {
+		newProjectConfig(config, config.Dir)
 	}
 
-	if len(config.Projects) == 1 {
-		for _, v := range config.Projects {
-			if len(v.DockerComposeFilenames) == 0 {
-				fmt.Println(NoProjectWarning)
-			}
-		}
+	if len(config.Projects) == 0 {
+		fmt.Println(NoProjectWarning)
 	}
 }
