@@ -114,27 +114,32 @@ func (c *Config) RunnableProjects() []*Project {
 	return projects
 }
 
-func dockerComposeFullPath(directory string) string {
-	return path.Join(directory, "docker-compose.yml")
+func dockerComposeFilenames(directory string) []string {
+	return []string{
+		path.Join(directory, "docker-compose.yml"),
+		path.Join(directory, "docker-compose.yaml"),
+	}
+
 }
 
-func directoryContainsDockerComposeConfig(directory string) bool {
-	composeFilename := dockerComposeFullPath(directory)
-	if _, err := os.Stat(composeFilename); err == nil {
-		return true
+func directoryContainsDockerComposeConfig(directory string) (bool, string) {
+	for _, configFile := range dockerComposeFilenames(directory) {
+		if _, err := os.Stat(configFile); err == nil {
+			return true, configFile
+		}
 	}
-	return false
+	return false, ""
 }
 
 func projectNameFromPath(projectPath string) string {
 	return path.Base(projectPath)
 }
 
-func newProjectConfig(projectPath string) *Project {
+func newProjectConfig(projectPath, composeFilename string) *Project {
 	project := &Project{
 		Directory: projectPath,
 		Name:      projectNameFromPath(projectPath),
-		DockerComposeFilenames: []string{dockerComposeFullPath(projectPath)},
+		DockerComposeFilenames: []string{composeFilename},
 	}
 
 	return project
@@ -209,10 +214,10 @@ func ExpandConfig(filename string, config *Config) {
 		project.Name = name
 	}
 
-	// If there's a docker compose file in the current directory
+	// If there's a docker-compose file in the current directory
 	// that's not specified in the config file create a default project
 	// with the name of the directory.
-	if directoryContainsDockerComposeConfig(config.Dir) {
+	if hasConfig, filename := directoryContainsDockerComposeConfig(config.Dir); hasConfig {
 		found := false
 		for _, project := range config.Projects {
 			if project.Directory == config.Dir {
@@ -221,7 +226,7 @@ func ExpandConfig(filename string, config *Config) {
 		}
 		if found == false {
 			log.Debugf("Creating default project config for project in %s", config.Dir)
-			project := newProjectConfig(config.Dir)
+			project := newProjectConfig(config.Dir, filename)
 			config.Projects[project.Name] = project
 		}
 	}
