@@ -1,6 +1,7 @@
 package dev
 
 import (
+	"fmt"
 	"os"
 	"path"
 	"path/filepath"
@@ -12,16 +13,26 @@ import (
 )
 
 const (
-	projectSearchDepthDefault     = 2
 	projectShellDefault           = "/bin/bash"
 	registryTimeoutSecondsDefault = 2
 	registryContinueOnFail        = false
 	// LogLevelDefault is the log level used when one has not been
 	// specified in an environment variable or in a configuration file.
 	LogLevelDefault = "info"
+	// SearchDepthDefault is the default number of subdirectories under
+	// the specified ProjectDirectories searched for docker-compose config
+	// files.
+	SearchDepthDefault = 2
 	// ConfigFileDefault is the default filename for the configuration file
 	// for this program.
 	ConfigFileDefault = ".dev.yml"
+	// NoProjectWarning is the message provided to the user when no project
+	// could be found
+	NoProjectWarning = `Unable to locate any docker-compose.yml files in this directory.
+
+If you would like to use dev outside of your project directory, create a link
+to your project .dev.yml from $HOME.
+`
 )
 
 var directoriesDefault = []string{"."}
@@ -31,9 +42,12 @@ var directoriesDefault = []string{"."}
 type Config struct {
 	Log LogConfig `mapstructure:"log"`
 	// List of directories to search for docker-compose.yml files
-	ProjectDirectories []string            `mapstructure:"directories"`
-	Projects           map[string]*Project `mapstructure:"projects"`
-	Registries         []*Registry         `mapstructure:"registries"`
+	ProjectDirectories []string `mapstructure:"directories"`
+	// The number of sub-directories undeath a ProjectDirectory that is
+	// searched for DockerCompose files.
+	SearchDepth int                 `mapstructure:"depth"`
+	Projects    map[string]*Project `mapstructure:"projects"`
+	Registries  []*Registry         `mapstructure:"registries"`
 	// Filename is the full path of the configuration file
 	Filename string
 	// Networks are a list of the networks managed by dev. A network
@@ -67,9 +81,6 @@ type Project struct {
 	Aliases []string `mapstructure:"aliases"`
 	// Whether project should be included for use by this project, default false
 	Hidden bool `mapstructure:"hidden"`
-	// The number of sub-directories undeath a Project directory that is
-	// searched for DockerCompose files.
-	SearchDepth int `mapstructure:"depth"`
 	// Shell used to enter the project container with 'sh' command,
 	// default is /bin/bash
 	Shell string `mapstructure:"shell"`
@@ -127,7 +138,6 @@ func locateDockerComposeFiles(startDirectory string, depth int) []string {
 	var configs []string
 
 	startDepth := strings.Count(startDirectory, "/")
-	//composeFilename := path.Join(startDirectory, "docker_compose.yml")
 	filepath.Walk(startDirectory, func(pathname string, info os.FileInfo, _ error) error {
 		endDepth := strings.Count(pathname, "/")
 
@@ -160,6 +170,8 @@ func projectNameFromPath(projectPath string) string {
 // specified project path (i.e., the full path to the project). Will create a
 // Project configuration if there is not an existing user-provided one.
 func getOrCreateProjectConfig(config *Config, projectPath string) *Project {
+	log.Debugf("getOrCreateProjectConfig: projectPath: %s", projectPath)
+
 	for _, project := range config.Projects {
 		//log.Infof("Found project with name: %s", project.Name)
 		found := false
@@ -186,9 +198,8 @@ func getOrCreateProjectConfig(config *Config, projectPath string) *Project {
 	log.Debugf("Did not find existing project configuration for %s, creating", projectNameFromPath(projectPath))
 
 	project := &Project{
-		Directory:   projectPath,
-		Name:        projectNameFromPath(projectPath),
-		SearchDepth: projectSearchDepthDefault,
+		Directory: projectPath,
+		Name:      projectNameFromPath(projectPath),
 	}
 	if directoryContainsDockerComposeConfig(projectPath) {
 		composePath := dockerComposeFullPath(projectPath)
@@ -199,13 +210,11 @@ func getOrCreateProjectConfig(config *Config, projectPath string) *Project {
 	return project
 }
 
-func expandProject(config *Config, project *Project) {
-	if project.Directory != "" && !project.Hidden {
-		composeFiles := locateDockerComposeFiles(project.Directory, project.SearchDepth)
-		log.Debugf("(%s) Found docker_compose.yml files: %s", project.Directory, strings.Join(composeFiles, ", "))
-		for _, composePath := range composeFiles {
-			getOrCreateProjectConfig(config, path.Dir(composePath))
-		}
+func findProjectsIn(config *Config, dir string) {
+	composeFiles := locateDockerComposeFiles(dir, config.SearchDepth)
+	log.Debugf("(%s) Found docker_compose.yml files: %s", dir, strings.Join(composeFiles, ", "))
+	for _, composePath := range composeFiles {
+		getOrCreateProjectConfig(config, path.Dir(composePath))
 	}
 }
 
@@ -284,7 +293,7 @@ func ExpandConfig(filename string, config *Config) {
 	}
 
 	// Ensure that relative paths used in the configuration file are relative
-	// the actual project, not to the location of a link.
+	// to the actual project, not to the location of a link.
 	if filename != "" {
 		fi, err := os.Lstat(filename)
 		if err != nil {
@@ -298,20 +307,26 @@ func ExpandConfig(filename string, config *Config) {
 	}
 	config.Filename = filename
 
-	expandRelativeDirectories(config)
 	expand(config)
+	expandRelativeDirectories(config)
 	setDefaults(config)
-
-	// Find individual projects by locating docker-compose.yml files in the
-	// specified project directories.  Create/synchronize a Project
-	// configuration for each found Project.
-	for _, projectDir := range config.ProjectDirectories {
-		// see if there is a project configuration
-		getOrCreateProjectConfig(config, projectDir)
-	}
 
 	for name, project := range config.Projects {
 		project.Name = name
-		expandProject(config, project)
+	}
+
+	// Find individual projects by locating docker-compose.yml files in the
+	// specified project directories.  Create/synchronize a Project
+	// configuration for each found Project....
+	for _, projectDir := range config.ProjectDirectories {
+		findProjectsIn(config, projectDir)
+	}
+
+	if len(config.Projects) == 1 {
+		for _, v := range config.Projects {
+			if len(v.DockerComposeFilenames) == 0 {
+				fmt.Println(NoProjectWarning)
+			}
+		}
 	}
 }
