@@ -130,41 +130,13 @@ func projectNameFromPath(projectPath string) string {
 	return path.Base(projectPath)
 }
 
-func newProjectConfig(config *Config, projectPath string) *Project {
-	log.Debugf("newProjectConfig: projectPath: %s", projectPath)
-
-	for _, project := range config.Projects {
-		//log.Infof("Found project with name: %s", project.Name)
-		found := false
-		if project.Directory == projectPath {
-			log.Infof("Found project by path: %s, setting name to %s",
-				project.Directory, projectNameFromPath(projectPath))
-			project.Name = projectNameFromPath(projectPath)
-			found = true
-		}
-		if project.Name == projectNameFromPath(projectPath) {
-			log.Debugf("Found project by name: %s; setting project directory to %s",
-				project.Name, projectPath)
-			project.Directory = projectPath
-			found = true
-		}
-		if found == true {
-			composePath := dockerComposeFullPath(projectPath)
-			if !SliceContainsString(project.DockerComposeFilenames, composePath) {
-				project.DockerComposeFilenames = append(project.DockerComposeFilenames, composePath)
-			}
-			return project
-		}
-	}
-	log.Debugf("Did not find existing project configuration for %s, creating", projectNameFromPath(projectPath))
-
+func newProjectConfig(projectPath string) *Project {
 	project := &Project{
 		Directory: projectPath,
 		Name:      projectNameFromPath(projectPath),
 		DockerComposeFilenames: []string{dockerComposeFullPath(projectPath)},
 	}
 
-	config.Projects[project.Name] = project
 	return project
 }
 
@@ -237,8 +209,21 @@ func ExpandConfig(filename string, config *Config) {
 		project.Name = name
 	}
 
+	// If there's a docker compose file in the current directory
+	// that's not specified in the config file create a default project
+	// with the name of the directory.
 	if directoryContainsDockerComposeConfig(config.Dir) {
-		newProjectConfig(config, config.Dir)
+		found := false
+		for _, project := range config.Projects {
+			if project.Directory == config.Dir {
+				found = true
+			}
+		}
+		if found == false {
+			log.Debugf("Creating default project config for project in %s", config.Dir)
+			project := newProjectConfig(config.Dir)
+			config.Projects[project.Name] = project
+		}
 	}
 
 	if len(config.Projects) == 0 {
