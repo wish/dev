@@ -210,11 +210,16 @@ func getDefaultConfigDirectory() string {
 	return path.Join(configHome, "dev")
 }
 
-// getdefaultAppConfigFilename returns the full path and filename of the
-// default configuration file for this tool. This file is only consulted
-// when there is no project-level configuration file.
-func getDefaultAppConfigFilename() string {
-	return path.Join(getDefaultConfigDirectory(), dev.ConfigFileDefault)
+func getAppConfigPaths(dir string) []string {
+	defaultConfigs := make([]string, len(dev.ConfigFileDefaults))
+	for i, filename := range dev.ConfigFileDefaults {
+		defaultConfigs[i] = path.Join(dir, filename)
+	}
+	return defaultConfigs
+}
+
+func getDefaultAppConfigFilenames() []string {
+	return getAppConfigPaths(getDefaultConfigDirectory())
 }
 
 // locateConfigFile attempts to locate the path at which the configuration file
@@ -235,27 +240,32 @@ func locateConfigFile() string {
 	}
 
 	currentDir := dir
-	currentConfigFile := ""
-	devConfig := ""
 	for {
-		currentConfigFile = path.Join(currentDir, dev.ConfigFileDefault)
-		if _, err := os.Stat(currentConfigFile); err == nil {
-			devConfig = currentConfigFile
-			break
-		} else {
-			currentDir = path.Clean(path.Join(currentDir, ".."))
-			// we've recursed to the home directory and still no
-			// config, let's not go any further
-			if !strings.Contains(currentDir, home) {
-				defaultConfig := getDefaultAppConfigFilename()
-				if _, err := os.Stat(getDefaultAppConfigFilename()); err == nil {
-					devConfig = defaultConfig
-				}
-				break
+		configFiles := getAppConfigPaths(currentDir)
+		for _, configFile := range configFiles {
+			if _, err := os.Stat(configFile); err == nil {
+				return configFile
 			}
 		}
+
+		currentDir = path.Clean(path.Join(currentDir, ".."))
+
+		// if we've recursed to the home directory and still no
+		// config, let's not go any further..but let's check
+		// one more place
+		if !strings.Contains(currentDir, home) {
+			configFiles := getDefaultAppConfigFilenames()
+
+			for _, configFile := range configFiles {
+				if _, err := os.Stat(configFile); err == nil {
+					return configFile
+				}
+			}
+			break
+		}
+
 	}
-	return devConfig
+	return ""
 }
 
 // initConfig locates the configuration file and loads it into the Config

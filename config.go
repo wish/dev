@@ -19,9 +19,6 @@ const (
 	// LogLevelDefault is the log level used when one has not been
 	// specified in an environment variable or in a configuration file.
 	LogLevelDefault = "info"
-	// ConfigFileDefault is the default filename for the configuration file
-	// for this program.
-	ConfigFileDefault = ".dev.yml"
 	// NoProjectWarning is the message provided to the user when no project
 	// could be found
 	NoProjectWarning = `Unable to locate any docker-compose.yml files in this directory.
@@ -30,6 +27,10 @@ If you would like to use dev outside of your project directory, create a link
 to your project .dev.yml from $HOME.
 `
 )
+
+// ConfigFileDefaults are the default filenames for the configuration
+// file for this program.
+var ConfigFileDefaults = []string{".dev.yml", ".dev.yaml", "dev.yml", "dev.yaml"}
 
 // Config is the datastructure into which we unmarshal the dev configuration
 // file.
@@ -176,7 +177,7 @@ func setDefaults(config *Config) {
 }
 
 // ExpandConfig makes modifications to the configuration structure
-// provided by the user before it is used by dev-cli.
+// provided by the user before it is used by dev.
 func ExpandConfig(filename string, config *Config) {
 	if config.Projects == nil {
 		config.Projects = make(map[string]*Project)
