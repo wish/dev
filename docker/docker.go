@@ -27,7 +27,9 @@ func getDockerClient() (*client.Client, error) {
 
 // NetworkCreate sends a request to the local docker daemon to create the ipam
 // network specified with name with the provided ipam options.
-func NetworkCreate(name string, opts *types.NetworkCreate) error {
+//
+// Returns the network id of the created network or an error.
+func NetworkCreate(name string, opts *types.NetworkCreate) (string, error) {
 	if os.Getenv("DOCKER_API_VERSION") == "" {
 		// Bump this as testing is performed on later versions
 		if err := os.Setenv("DOCKER_API_VERSION", "1.25"); err != nil {
@@ -36,19 +38,19 @@ func NetworkCreate(name string, opts *types.NetworkCreate) error {
 	}
 	cli, err := getDockerClient()
 	if err != nil {
-		return errors.Wrap(err, "failed to create docker client")
+		return "", errors.Wrap(err, "failed to create docker client")
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), timeoutSecondsDefault)
 	defer cancel()
 
 	res, err := cli.NetworkCreate(ctx, name, *opts)
 	if err != nil {
-		return errors.Wrap(err, "failed to create network")
+		return "", errors.Wrap(err, "failed to create network")
 	}
 	if res.Warning != "" {
 		log.Warn(res.Warning)
 	}
-	return err
+	return res.ID, err
 
 }
 

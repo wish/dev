@@ -39,7 +39,7 @@ func ProjectCmdUpCreate(config *dev.Config, project *dev.Project) *cobra.Command
 
 				if !exists {
 					log.Infof("Creating %s network", name)
-					if err := docker.NetworkCreate(name, opts); err != nil {
+					if _, err := docker.NetworkCreate(name, opts); err != nil {
 						log.Fatal(err)
 					}
 				} else {
