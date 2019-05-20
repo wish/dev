@@ -17,14 +17,15 @@ const (
 	registryTimeoutSecondsDefault = 2
 	registryContinueOnFail        = false
 	// LogLevelDefault is the log level used when one has not been
-	// specified in an environment variable or in a configuration file.
+	// specified in an environment variable or in configuration file.
 	LogLevelDefault = "info"
 	// NoProjectWarning is the message provided to the user when no project
 	// could be found
-	NoProjectWarning = `Unable to locate any docker-compose.yml files in this directory.
+	NoProjectWarning = `No docker-compose.yml file in this directory.
 
 If you would like to use dev outside of your project directory, create a link
-to your project .dev.yml from $HOME.
+to your project dev.yaml from $HOME or set the DEV_CONFIG environment variable
+to point to your project dev.yaml.
 `
 )
 
@@ -38,10 +39,13 @@ type Config struct {
 	Log        LogConfig           `mapstructure:"log"`
 	Projects   map[string]*Project `mapstructure:"projects"`
 	Registries []*Registry         `mapstructure:"registries"`
-	// Filename is the full path of the configuration file
+	// Filename is the full path of the configuration file containing
+	// this configuration. This is used internally and is ignored
+	// if specified by the user.
 	Filename string
 	// Dir is either the location of the config file or the current
-	// working directory if there is no config file.
+	// working directory if there is no config file. This is used
+	// intenrally and is ignored if specified by the user.
 	Dir string
 	// Networks are a list of the networks managed by dev. A network
 	// will be created automatically as required by dev if it is listed
@@ -58,19 +62,14 @@ type LogConfig struct {
 // Project configuration structure. This must be used when using more than one
 // docker-compose.yml file for a project.
 type Project struct {
-	// The absolute paths of the docker compose files for this project. If
-	// not specified, project directories will be searched for one. If the
-	// project needs multiple, they must be specified.
+	// The paths of the docker compose files for this project. Can be
+	// relative or absolute paths.
 	DockerComposeFilenames []string `mapstructure:"docker_compose_files"`
-	// The absolute path of the root of the project (or its basename). This
-	// need not be the same as a directory in ProjectDirectories, but must
-	// be a child directory of one of those paths. If not specified, this
-	// directory is assumed to be at the same location as the
-	// DockerCompose.yml file.
+	// The path of the root of the project (or its basename). Do we need this?
 	Directory string `mapstructure:"directory"`
-	// TODO: unused remove. Currently set to the key name.
+	// Ignored if set by user.
 	Name string `mapstructure:"name"`
-	// Alternate names for this project
+	// Alternate names for this project.
 	Aliases []string `mapstructure:"aliases"`
 	// Whether project should be included for use by this project, default false
 	Hidden bool `mapstructure:"hidden"`
