@@ -32,39 +32,40 @@ modules to build this project.
 # Configuration
 
 Dev will search the current directory and its parent directory until it locates
-a configuration file. The name of the configuration is .dev.yml but can be
+a configuration file. The name of the configuration is .dev.yaml but can be
 overridden with the --config flag. If a per-project configuration file cannot
 be found, dev will look in your home directory and finally in
-$XDG_CONFIG_HOME/dev for one. If a configuration file is not found, dev will
-assume you want to use the current directory as the only project directory and
-will search for docker-compose.yml files there. For each docker-compose.yml
-found, dev will create a number of commands for the project. For example, if
-your docker-compose.yml is located in directory /home/shaw/Projects/foo dev
-will create a command named 'foo' and a number of subcommands. These
-subcommands can be listed by running `dev foo --help`.
+$XDG_CONFIG_HOME/dev for one.
+
+If a configuration file is not found, dev will look in the current working
+directory for a docker-compose.yml file. If one is found, it will create a dev
+project with the base name of current directory.  For example, if you are
+located in $HOME/Projects/my-app and there is a docker-compose.yml in that
+directory, dev will create a command named 'my-app' and a number of
+subcommands.  These subcommands can be listed by running `dev my-app --help`.
 
 If you require more than one docker-compose.yml for your project, you can
-specify these in the .dev.yml file. For example, for the Foo project which has
-a layout like this:
+specify these in the .dev.yaml file. For example, for the my-app project which
+has a layout like this:
 
 ```
-  $HOME/Projects/foo:
+  $HOME/Projects/my-app:
     .dev.yaml
     docker-compose.yml
 
-  $HOME/Projects/foo/docker
+  $HOME/Projects/my-app/docker
     docker-compose.shared.yml
 ```
 
-The $HOME/Projects/foo/.dev.yml might contain something like this:
+The $HOME/Projects/my-app/dev.yml might contain something like this:
 
  ```yaml
 projects:
-  foo:
+  my-app:
     docker_compose_files:
       - "docker/docker-compose.shared.yml"
       - "docker-compose.yml"
-    depends: ["my-external-network"]
+    depends_on: ["my-external-network"]
 
 networks:
   my-external-network:
@@ -75,34 +76,33 @@ networks:
         - subnet: 173.16.242.0/16
  ```
 
-Running 'dev foo build' will provide both docker-compose.yml configuration
+Running 'dev my-app build' will provide both docker-compose.yml configuration
 files to docker-compose with the -f flag.
 
-When 'dev foo up' is run, "my-external-network" will be created if it does not
+When 'dev my-app up' is run, "my-external-network" will be created if it does not
 exist.
 
-Run 'dev foo sh' to get a shell in the container or 'dev foo sh <command>' to
-run command in your container (assuming you've mapped your project directory as
-a volume into the container.
-
+Run 'dev my-app sh' to get a shell in the container or 'dev my-app sh ls -al'
+to run 'ls -al' in the project container. The "project" container is the
+container in the docker-compose.yml with the same name as the project in the
+.dev.yaml file.
 
 # Overview
 
 Run `dev` to see a list of Projects
 
-The commands are ordered by project.
 
 # Project Commands
 
-These commands are generated for each project that the dev tool locates. To
-run, you must first specify the project name.
+The following commands are sub-commands added to each project added to
+.dev.yaml. If no .dev.yaml could not be located, dev will look in the current
+directory for a docker-compose.yml file and add a project with the same name as
+the current directory.
 
 ## build
 
-Run docker-compose build for the specified project. This will the
-docker-compose.yml files found for the project appended to the list of
-docker-compose.yml files specified in the configuration file for this project,
-if one is specified.
+Run docker-compose build for the specified project. The build will specify
+all the docker-compose files in the project's `docker_compose_files` array.
 
 ## ps
 

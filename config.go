@@ -33,6 +33,9 @@ to point to your project dev.yaml.
 // file for this program.
 var ConfigFileDefaults = []string{".dev.yml", ".dev.yaml", "dev.yml", "dev.yaml"}
 
+// todo: pull these from docker library if we can
+var dockerComposeFilenames = []string{"docker-compose.yml", "docker-compose.yaml"}
+
 // Config is the datastructure into which we unmarshal the dev configuration
 // file.
 type Config struct {
@@ -122,16 +125,16 @@ func (c *Config) RunnableProjects() []*Project {
 	return projects
 }
 
-func dockerComposeFilenames(directory string) []string {
-	return []string{
-		path.Join(directory, "docker-compose.yml"),
-		path.Join(directory, "docker-compose.yaml"),
+func pathToDockerComposeFilenames(directory string) []string {
+	paths := make([]string, len(dockerComposeFilenames))
+	for _, filename := range dockerComposeFilenames {
+		paths = append(paths, path.Join(directory, filename))
 	}
-
+	return paths
 }
 
 func directoryContainsDockerComposeConfig(directory string) (bool, string) {
-	for _, configFile := range dockerComposeFilenames(directory) {
+	for _, configFile := range pathToDockerComposeFilenames(directory) {
 		if _, err := os.Stat(configFile); err == nil {
 			return true, configFile
 		}
@@ -145,8 +148,8 @@ func projectNameFromPath(projectPath string) string {
 
 func newProjectConfig(projectPath, composeFilename string) *Project {
 	project := &Project{
-		Directory: projectPath,
-		Name:      projectNameFromPath(projectPath),
+		Directory:              projectPath,
+		Name:                   projectNameFromPath(projectPath),
 		DockerComposeFilenames: []string{composeFilename},
 	}
 
@@ -157,7 +160,8 @@ func expandRelativeDirectories(config *Config) {
 	for _, project := range config.Projects {
 		for i, composeFile := range project.DockerComposeFilenames {
 			if !strings.HasPrefix(composeFile, "/") {
-				project.DockerComposeFilenames[i] = path.Clean(path.Join(config.Dir, composeFile))
+				fullPath := path.Clean(path.Join(config.Dir, composeFile))
+				project.DockerComposeFilenames[i] = fullPath
 			}
 		}
 	}
@@ -220,6 +224,12 @@ func ExpandConfig(filename string, config *Config) {
 	}
 
 	expandRelativeDirectories(config)
+
+	// for _, project := range config.Projects {
+	// 	for _, composeFilename := range project.DockerComposeFilenames {
+	// 		log.Debugf("hmm2: %s", composeFilename)
+	// 	}
+	// }
 	setDefaults(config)
 
 	for name, project := range config.Projects {
