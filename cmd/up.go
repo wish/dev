@@ -50,6 +50,8 @@ func registriesLogin(config *dev.Config) {
 			} else {
 				log.Fatal(msg)
 			}
+		} else {
+			log.Debugf("Logged in to registry %s at %s", r.Name, r.URL)
 		}
 	}
 }

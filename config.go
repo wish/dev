@@ -39,9 +39,9 @@ var dockerComposeFilenames = []string{"docker-compose.yml", "docker-compose.yaml
 // Config is the datastructure into which we unmarshal the dev configuration
 // file.
 type Config struct {
-	Log        LogConfig           `mapstructure:"log"`
-	Projects   map[string]*Project `mapstructure:"projects"`
-	Registries []*Registry         `mapstructure:"registries"`
+	Log        LogConfig            `mapstructure:"log"`
+	Projects   map[string]*Project  `mapstructure:"projects"`
+	Registries map[string]*Registry `mapstructure:"registries"`
 	// Filename is the full path of the configuration file containing
 	// this configuration. This is used internally and is ignored
 	// if specified by the user.
@@ -225,14 +225,11 @@ func ExpandConfig(filename string, config *Config) {
 	}
 
 	expandRelativeDirectories(config)
-
-	// for _, project := range config.Projects {
-	// 	for _, composeFilename := range project.DockerComposeFilenames {
-	// 		log.Debugf("hmm2: %s", composeFilename)
-	// 	}
-	// }
 	setDefaults(config)
 
+	for name, registry := range config.Registries {
+		registry.Name = name
+	}
 	for name, project := range config.Projects {
 		project.Name = name
 	}
