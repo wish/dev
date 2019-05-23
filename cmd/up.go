@@ -47,8 +47,8 @@ func ProjectCmdUpCreate(config *dev.Config, project *dev.Project) *cobra.Command
 				}
 
 			}
-			runDockerCompose("up", project.DockerComposeFilenames, "-d")
-			runDockerCompose("logs", project.DockerComposeFilenames, "-f", project.Name)
+			runDockerCompose(config.ContainerPrefix, "up", project.DockerComposeFilenames, "-d")
+			runDockerCompose(config.ContainerPrefix, "logs", project.DockerComposeFilenames, "-f", project.Name)
 		},
 	}
 	return up
