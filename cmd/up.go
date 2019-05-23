@@ -110,8 +110,8 @@ func ProjectCmdUpCreate(config *dev.Config, project *dev.Project) *cobra.Command
 			networkIDMap := networksCreate(config)
 			verifyContainerConfig(config, project, networkIDMap)
 
-			runDockerCompose(config.ContainerPrefix, "up", project.DockerComposeFilenames, "-d")
-			runDockerCompose(config.ContainerPrefix, "logs", project.DockerComposeFilenames, "-f", project.Name)
+			runDockerCompose(config.ImagePrefix, "up", project.DockerComposeFilenames, "-d")
+			runDockerCompose(config.ImagePrefix, "logs", project.DockerComposeFilenames, "-f", project.Name)
 		},
 	}
 	return up

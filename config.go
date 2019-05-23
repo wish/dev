@@ -55,14 +55,15 @@ type Config struct {
 	// as a dependency of your project. These are networks that are used
 	// as 'external networks' in your docker-compose configuration.
 	Networks map[string]*types.NetworkCreate `mapstructure:"networks"`
-	// ContainerPrefix is the prefix to add to containers created with this
-	// tool. Compose forces the use of a prefix so we allow the
-	// configuration of that prefix here. For some container specific
-	// options, we must know the prefix in order to find the correct
-	// container. If not set, this defaults to the directory where the
-	// this tool's config file is located or the directory or the
-	// docker-compose.yml if one is found.
-	ContainerPrefix string `mapstructure:"container_prefix"`
+	// ImagePrefix is the prefix to add to images built with this
+	// tool through compose. Compose forces the use of a prefix so we
+	// allow the configuration of that prefix here.  Dev must know the
+	// prefix in order to perform some image specific operations.  If not
+	// set, this defaults to the directory where the this tool's config
+	// file is located or the directory or the docker-compose.yml if one is
+	// found. Note that compose only adds the prefix to local image
+	// builds.
+	ImagePrefix string `mapstructure:"image_prefix"`
 }
 
 // LogConfig holds the logging related configuration.
@@ -186,8 +187,8 @@ func setDefaults(config *Config) {
 		config.Log.Level = LogLevelDefault
 	}
 
-	if config.ContainerPrefix == "" {
-		config.ContainerPrefix = filepath.Base(config.Dir)
+	if config.ImagePrefix == "" {
+		config.ImagePrefix = filepath.Base(config.Dir)
 	}
 }
 

@@ -111,7 +111,7 @@ func addProjectCommands(projectCmd *cobra.Command, config *dev.Config, project *
 		Use:   "build",
 		Short: "Build the " + project.Name + " container (and its dependencies)",
 		Run: func(cmd *cobra.Command, args []string) {
-			runDockerCompose(config.ContainerPrefix, "build", project.DockerComposeFilenames)
+			runDockerCompose(config.ImagePrefix, "build", project.DockerComposeFilenames)
 		},
 	}
 	projectCmd.AddCommand(build)
@@ -123,7 +123,7 @@ func addProjectCommands(projectCmd *cobra.Command, config *dev.Config, project *
 		Use:   "ps",
 		Short: "List status of " + project.Name + " containers",
 		Run: func(cmd *cobra.Command, args []string) {
-			runDockerCompose(config.ContainerPrefix, "ps", project.DockerComposeFilenames)
+			runDockerCompose(config.ImagePrefix, "ps", project.DockerComposeFilenames)
 		},
 	}
 	projectCmd.AddCommand(ps)
@@ -143,7 +143,7 @@ use more one docker-compose.yml file.`,
 			// for now we assume that the project configuration is in the last compose
 			// file listed, which it should be.. would be better to parse the configs
 			// and verify assumptions.
-			runDockerCompose(config.ContainerPrefix, "down", []string{project.DockerComposeFilenames[i-1]})
+			runDockerCompose(config.ImagePrefix, "down", []string{project.DockerComposeFilenames[i-1]})
 		},
 	}
 	projectCmd.AddCommand(down)
