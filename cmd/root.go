@@ -141,9 +141,8 @@ may have been brought up to support this project, which is the case for projects
 use more one docker-compose.yml file.`,
 		Run: func(cmd *cobra.Command, args []string) {
 			i := len(project.DockerComposeFilenames)
-			// for now we assume that the project configuration is in the last compose
-			// file listed, which it should be.. would be better to parse the configs
-			// and verify assumptions.
+			// for now we assume the non-shared config is last
+			// compose file listed. Needs fixing.
 			runDockerCompose(config.ImagePrefix, "down", []string{project.DockerComposeFilenames[i-1]})
 		},
 	}
