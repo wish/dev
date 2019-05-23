@@ -111,6 +111,7 @@ func addProjectCommands(projectCmd *cobra.Command, config *dev.Config, project *
 		Use:   "build",
 		Short: "Build the " + project.Name + " container (and its dependencies)",
 		Run: func(cmd *cobra.Command, args []string) {
+			registriesLogin(config)
 			runDockerCompose(config.ImagePrefix, "build", project.DockerComposeFilenames)
 		},
 	}
