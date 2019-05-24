@@ -42,7 +42,7 @@ func networksCreate(config *dev.Config) map[string]string {
 // private registries.
 func registriesLogin(config *dev.Config) {
 	for _, r := range config.Registries {
-		err := registry.Login(r)
+		err := registry.Login(r.URL, r.Name, r.Password)
 		if err != nil {
 			msg := fmt.Sprintf("Failed to login to %s registry: %s", r.Name, err)
 			if r.ContinueOnFailure {
