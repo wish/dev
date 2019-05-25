@@ -2,10 +2,6 @@ module github.com/wish/dev
 
 go 1.12
 
-replace example.com/original/import/path => /your/forked/import/path
-
-replace github.com/wish/compose-file => /home/shaw/Projects/compose-file
-
 require (
 	github.com/Azure/go-ansiterm v0.0.0-20170929234023-d6e3b3328b78 // indirect
 	github.com/Microsoft/go-winio v0.4.12 // indirect
@@ -25,7 +21,7 @@ require (
 	github.com/sirupsen/logrus v1.4.1
 	github.com/spf13/cobra v0.0.3
 	github.com/spf13/viper v1.3.2
-	github.com/wish/compose-file v0.0.0-20190521193856-a7348851dc1f
+	github.com/wish/compose-file v0.0.0-20190521234249-d62e2adbd43c
 	golang.org/x/net v0.0.0-20190514140710-3ec191127204 // indirect
 	golang.org/x/time v0.0.0-20190308202827-9d24e82272b4 // indirect
 	google.golang.org/grpc v1.20.1 // indirect

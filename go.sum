@@ -87,6 +87,10 @@ github.com/stretchr/testify v0.0.0-20160418225827-c5d7a69bf8a2/go.mod h1:a8OnRci
 github.com/stretchr/testify v1.2.2 h1:bSDNvY7ZPG5RlJ8otE/7V6gMiyenm9RtJ7IUVIAoJ1w=
 github.com/stretchr/testify v1.2.2/go.mod h1:a8OnRcib4nhh0OaRAV+Yts87kKdq0PP7pXfy6kDkUVs=
 github.com/ugorji/go/codec v0.0.0-20181204163529-d75b2dcb6bc8/go.mod h1:VFNgLljTbGfSG7qAOspJ7OScBnGdDN/yBr0sguwnwf0=
+github.com/wish/compose-file v0.0.0-20190521193856-a7348851dc1f h1:En4/wX63C1R618CMtL/rpQvUx8fIjwdNBnC5qdIKsos=
+github.com/wish/compose-file v0.0.0-20190521193856-a7348851dc1f/go.mod h1:XkL5cv8ddOZiksl+E4wAKuiu/Q5VFli5a6oZRrnbU4E=
+github.com/wish/compose-file v0.0.0-20190521234249-d62e2adbd43c h1:s2sEpE1mLfKyxVaOuZjAJoqEbhHt2dA+Hee3Jg16mWQ=
+github.com/wish/compose-file v0.0.0-20190521234249-d62e2adbd43c/go.mod h1:XkL5cv8ddOZiksl+E4wAKuiu/Q5VFli5a6oZRrnbU4E=
 github.com/xeipuuv/gojsonpointer v0.0.0-20151027082146-e0fe6f683076 h1:KM4T3G70MiR+JtqplcYkNVoNz7pDwYaBxWBXQK804So=
 github.com/xeipuuv/gojsonpointer v0.0.0-20151027082146-e0fe6f683076/go.mod h1:N2zxlSyiKSe5eX1tZViRH5QA0qijqEDrYZiPEAiq3wU=
 github.com/xeipuuv/gojsonreference v0.0.0-20150808065054-e02fc20de94c h1:XZWnr3bsDQWAZg4Ne+cPoXRPILrNlPNQfxBuwLl43is=
