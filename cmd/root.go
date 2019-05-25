@@ -183,8 +183,11 @@ func init() {
 	level := viper.GetString("LOGS")
 	configureLogging(level)
 	initConfig()
-	// reconfigure logging with config from config file
-	configureLogging(config.Log.Level)
+
+	// environment variable takes precendence of config file setting
+	if viper.GetString("LOGS") == "" {
+		configureLogging(config.Log.Level)
+	}
 
 	// adjust log level config file specification
 
