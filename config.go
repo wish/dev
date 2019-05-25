@@ -149,8 +149,8 @@ func projectNameFromPath(projectPath string) string {
 
 func newProjectConfig(projectPath, composeFilename string) *Project {
 	project := &Project{
-		Directory:              projectPath,
-		Name:                   projectNameFromPath(projectPath),
+		Directory: projectPath,
+		Name:      projectNameFromPath(projectPath),
 		DockerComposeFilenames: []string{composeFilename},
 	}
 
@@ -231,7 +231,13 @@ func ExpandConfig(filename string, config *Config) {
 		registry.Name = name
 	}
 	for name, project := range config.Projects {
-		project.Name = name
+		// if user did not specify a custom project container name,
+		// the container name is assumed to be the same name as the
+		// project itself. Should probably split this out into another
+		// variable.
+		if project.Name == "" {
+			project.Name = name
+		}
 	}
 
 	// If there's a docker-compose file in the current directory
