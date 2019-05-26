@@ -90,8 +90,8 @@ func runDockerCompose(project, cmd string, composePaths []string, args ...string
 	runCommand("docker-compose", cmdLine)
 }
 
-func runOnContainer(project *dev.Project, cmds ...string) {
-	var cmdLine []string
+func runOnContainer(projectName string, project *dev.Project, cmds ...string) {
+	cmdLine := []string{"-p", projectName}
 
 	for _, path := range project.DockerComposeFilenames {
 		cmdLine = append(cmdLine, "-f", path)

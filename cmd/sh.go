@@ -69,7 +69,7 @@ func ProjectCmdShCreate(config *dev.Config, project *dev.Project) *cobra.Command
 			cmdLine := []string{project.Shell, "-c",
 				fmt.Sprintf("cd %s ; %s", relativePath, strings.Join(args, " "))}
 
-			runOnContainer(project, cmdLine...)
+			runOnContainer(config.ImagePrefix, project, cmdLine...)
 		},
 	}
 	return sh
