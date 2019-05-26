@@ -101,6 +101,20 @@ func verifyContainerConfig(config *dev.Config, project *dev.Project, networkIDMa
 	}
 }
 
+// Up brings up the specified project with its dependencies and optionally
+// tails the logs of the project container.
+func Up(config *dev.Config, project *dev.Project, tailLogs bool) {
+	registriesLogin(config)
+	networkIDMap := networksCreate(config)
+	verifyContainerConfig(config, project, networkIDMap)
+
+	runDockerCompose(config.ImagePrefix, "up", project.DockerComposeFilenames, "-d")
+
+	if tailLogs {
+		runDockerCompose(config.ImagePrefix, "logs", project.DockerComposeFilenames, "-f", project.Name)
+	}
+}
+
 // ProjectCmdUpCreate constructs the 'up' command line option available for
 // each project.
 func ProjectCmdUpCreate(config *dev.Config, project *dev.Project) *cobra.Command {
@@ -108,12 +122,7 @@ func ProjectCmdUpCreate(config *dev.Config, project *dev.Project) *cobra.Command
 		Use:   "up",
 		Short: "Create and start the " + project.Name + " containers",
 		Run: func(cmd *cobra.Command, args []string) {
-			registriesLogin(config)
-			networkIDMap := networksCreate(config)
-			verifyContainerConfig(config, project, networkIDMap)
-
-			runDockerCompose(config.ImagePrefix, "up", project.DockerComposeFilenames, "-d")
-			runDockerCompose(config.ImagePrefix, "logs", project.DockerComposeFilenames, "-f", project.Name)
+			Up(config, project, false)
 		},
 	}
 	return up

@@ -9,6 +9,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/wish/dev"
+	"github.com/wish/dev/docker"
 )
 
 // ProjectCmdShCreate constructs the 'sh' command line option available for
@@ -24,6 +25,15 @@ func ProjectCmdShCreate(config *dev.Config, project *dev.Project) *cobra.Command
 		// string-- in the name of usability.
 		DisableFlagParsing: true,
 		Run: func(cmd *cobra.Command, args []string) {
+			// TODO: check if project container is running.. if not, run the up command first
+			running, err := docker.IsContainerRunning(config.ImagePrefix, project.Name)
+			if err != nil {
+				log.Fatalf("Error communicating with docker daemon, is it up? %s", err)
+			}
+			if !running {
+				log.Infof("Project %s not running, bringing it up", project.Name)
+				Up(config, project, false)
+			}
 			// Get current directory, attempt to find its location
 			// on the container and cd to it. This allows developers to
 			// use relative directories like they would in a non-containerized
