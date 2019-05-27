@@ -37,9 +37,9 @@ var ConfigFileDefaults = []string{".dev.yml", ".dev.yaml", "dev.yml", "dev.yaml"
 // todo: pull these from docker library if we can
 var dockerComposeFilenames = []string{"docker-compose.yml", "docker-compose.yaml"}
 
-// Config is the datastructure into which we unmarshal the dev configuration
+// Dev is the datastructure into which we unmarshal the dev configuration
 // file.
-type Config struct {
+type Dev struct {
 	Log        LogConfig            `mapstructure:"log"`
 	Projects   map[string]*Project  `mapstructure:"projects"`
 	Registries map[string]*Registry `mapstructure:"registries"`
@@ -116,8 +116,8 @@ type Registry struct {
 
 // NewConfig structs the default configuration structure for dev driven
 // projects.
-func NewConfig() *Config {
-	config := &Config{
+func NewConfig() *Dev {
+	config := &Dev{
 		Projects:   make(map[string]*Project),
 		Networks:   make(map[string]*types.NetworkCreate),
 		Registries: make(map[string]*Registry),
@@ -130,7 +130,7 @@ func NewConfig() *Config {
 
 // RunnableProjects returns the Project configuration of each Project
 // that has a docker-compose.yml file and is not hidden by configuration.
-func (c *Config) RunnableProjects() []*Project {
+func (c *Dev) RunnableProjects() []*Project {
 	var projects []*Project
 
 	for _, project := range c.Projects {
@@ -172,7 +172,7 @@ func newProjectConfig(projectPath, composeFilename string) *Project {
 	return project
 }
 
-func expandRelativeDirectories(config *Config) {
+func expandRelativeDirectories(config *Dev) {
 	for _, project := range config.Projects {
 		for i, composeFile := range project.DockerComposeFilenames {
 			if !strings.HasPrefix(composeFile, "/") {
@@ -183,7 +183,7 @@ func expandRelativeDirectories(config *Config) {
 	}
 }
 
-func setDefaults(config *Config) {
+func setDefaults(config *Dev) {
 	// Need to be smarter here.. Users unable to specify 0 here, which is
 	// a reasonable default for many values.
 	for _, registry := range config.Registries {
@@ -216,9 +216,9 @@ func setDefaults(config *Config) {
 	}
 }
 
-// ExpandConfig makes modifications to the configuration structure
+// Expand makes modifications to the configuration structure
 // provided by the user before it is used by dev.
-func ExpandConfig(filename string, config *Config) {
+func Expand(filename string, config *Dev) {
 	// Ensure that relative paths used in the configuration file are
 	// relative to the actual project, not to the location of a link.
 	if filename != "" {
@@ -287,7 +287,7 @@ func ExpandConfig(filename string, config *Config) {
 	}
 }
 
-func projectExists(config *Config, name string) bool {
+func projectExists(config *Dev, name string) bool {
 	for _, project := range config.Projects {
 		if project.Name == name {
 			return true
@@ -296,15 +296,15 @@ func projectExists(config *Config, name string) bool {
 	return false
 }
 
-func isDefaultConfig(config *Config) bool {
+func isDefaultConfig(config *Dev) bool {
 	return (len(config.Projects) == 0 && len(config.Networks) == 0 &&
 		len(config.Registries) == 0 && config.ImagePrefix == "")
 }
 
-// MergeConfig adds the configuration from source to the configuration from
+// Merge adds the configuration from source to the configuration from
 // target. An error is returned if there is an object with the same name
 // in target and source or if the configs cannot be merged for whatever reason.
-func MergeConfig(target *Config, source *Config) error {
+func Merge(target *Dev, source *Dev) error {
 	if isDefaultConfig(target) {
 		// project wide settings are set by the first config listed
 		target.ImagePrefix = source.ImagePrefix

@@ -8,13 +8,13 @@ import (
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"github.com/wish/dev"
+	config "github.com/wish/dev/config"
 	"github.com/wish/dev/docker"
 )
 
 // ProjectCmdShCreate constructs the 'sh' command line option available for
 // each project.
-func ProjectCmdShCreate(config *dev.Config, project *dev.Project) *cobra.Command {
+func ProjectCmdShCreate(devConfig *config.Dev, project *config.Project) *cobra.Command {
 	// needs work here... to pass args, gotta quote everything... -- doesn't work, etc.
 	sh := &cobra.Command{
 		Use:   "sh",
@@ -26,13 +26,13 @@ func ProjectCmdShCreate(config *dev.Config, project *dev.Project) *cobra.Command
 		DisableFlagParsing: true,
 		Run: func(cmd *cobra.Command, args []string) {
 			// TODO: check if project container is running.. if not, run the up command first
-			running, err := docker.IsContainerRunning(config.ImagePrefix, project.Name)
+			running, err := docker.IsContainerRunning(devConfig.ImagePrefix, project.Name)
 			if err != nil {
 				log.Fatalf("Error communicating with docker daemon, is it up? %s", err)
 			}
 			if !running {
 				log.Infof("Project %s not running, bringing it up", project.Name)
-				Up(config, project, false)
+				Up(devConfig, project, false)
 			}
 			// Get current directory, attempt to find its location
 			// on the container and cd to it. This allows developers to
@@ -42,7 +42,7 @@ func ProjectCmdShCreate(config *dev.Config, project *dev.Project) *cobra.Command
 			if err != nil {
 				log.Fatalf("Failed to get current directory: %s", err)
 			}
-			configDir := filepath.Dir(config.Filename)
+			configDir := filepath.Dir(devConfig.Filename)
 
 			relativePath := ""
 			if strings.HasPrefix(cwd, configDir) {
@@ -69,7 +69,7 @@ func ProjectCmdShCreate(config *dev.Config, project *dev.Project) *cobra.Command
 			cmdLine := []string{project.Shell, "-c",
 				fmt.Sprintf("cd %s ; %s", relativePath, strings.Join(args, " "))}
 
-			runOnContainer(config.ImagePrefix, project, cmdLine...)
+			runOnContainer(devConfig.ImagePrefix, project, cmdLine...)
 		},
 	}
 	return sh

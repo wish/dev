@@ -10,7 +10,12 @@ import (
 
 	"github.com/mattn/go-isatty"
 	log "github.com/sirupsen/logrus"
-	"github.com/wish/dev"
+
+	//"github.com/wish/dev"
+	config "github.com/wish/dev/config"
+	dev "github.com/wish/dev/config"
+
+	//dev "github.com/wish/dev/config"
 
 	"github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
@@ -24,8 +29,8 @@ var (
 	BuildVersion = "Build not set (use Makefile to set)"
 	// BuildDate is used by the build to include the build date in the --version output
 	BuildDate = "BuildDate not set (use Makefile to set)"
-	// config stores all of the configuration data in the dev configuration files
-	config = dev.NewConfig()
+	// appConfig stores all of the configuration data in the dev configuration files
+	appConfig = config.NewConfig()
 )
 
 var rootCmd = &cobra.Command{
@@ -41,7 +46,7 @@ var rootCmd = &cobra.Command{
 
 func configureLogging(logLevel string) {
 	if logLevel == "" {
-		logLevel = config.Log.Level
+		logLevel = appConfig.Log.Level
 	}
 	logRusLevel, err := log.ParseLevel(logLevel)
 	if err != nil {
@@ -91,8 +96,8 @@ func runDockerCompose(project, cmd string, composePaths []string, args ...string
 	runCommand("docker-compose", cmdLine)
 }
 
-func runOnContainer(projectName string, project *dev.Project, cmds ...string) {
-	cmdLine := []string{"exec"}
+func runOnContainer(projectName string, project *config.Project, cmds ...string) {
+	cmdLine := []string{"-p", projectName}
 
 	// avoid "input device is not a tty error"
 	if isatty.IsTerminal(os.Stdout.Fd()) {
@@ -108,30 +113,30 @@ func runOnContainer(projectName string, project *dev.Project, cmds ...string) {
 	runCommand("docker", cmdLine)
 }
 
-func addProjectCommands(projectCmd *cobra.Command, config *dev.Config, project *dev.Project) {
+func addProjectCommands(projectCmd *cobra.Command, devConfig *config.Dev, project *config.Project) {
 	build := &cobra.Command{
 		Use:   "build",
 		Short: "Build the " + project.Name + " container (and its dependencies)",
 		Run: func(cmd *cobra.Command, args []string) {
-			registriesLogin(config)
-			runDockerCompose(config.ImagePrefix, "build", project.DockerComposeFilenames)
+			registriesLogin(devConfig)
+			runDockerCompose(devConfig.ImagePrefix, "build", project.DockerComposeFilenames)
 		},
 	}
 	projectCmd.AddCommand(build)
 
-	up := ProjectCmdUpCreate(config, project)
+	up := ProjectCmdUpCreate(devConfig, project)
 	projectCmd.AddCommand(up)
 
 	ps := &cobra.Command{
 		Use:   "ps",
 		Short: "List status of " + project.Name + " containers",
 		Run: func(cmd *cobra.Command, args []string) {
-			runDockerCompose(config.ImagePrefix, "ps", project.DockerComposeFilenames)
+			runDockerCompose(devConfig.ImagePrefix, "ps", project.DockerComposeFilenames)
 		},
 	}
 	projectCmd.AddCommand(ps)
 
-	sh := ProjectCmdShCreate(config, project)
+	sh := ProjectCmdShCreate(devConfig, project)
 	projectCmd.AddCommand(sh)
 
 	down := &cobra.Command{
@@ -145,13 +150,13 @@ use more one docker-compose.yml file.`,
 			i := len(project.DockerComposeFilenames)
 			// for now we assume the non-shared config is last
 			// compose file listed. Needs fixing.
-			runDockerCompose(config.ImagePrefix, "down", []string{project.DockerComposeFilenames[i-1]})
+			runDockerCompose(devConfig.ImagePrefix, "down", []string{project.DockerComposeFilenames[i-1]})
 		},
 	}
 	projectCmd.AddCommand(down)
 }
 
-func addProjects(cmd *cobra.Command, config *dev.Config) error {
+func addProjects(cmd *cobra.Command, config *config.Dev) error {
 	for _, project := range config.RunnableProjects() {
 		log.Debugf("Adding %s to project commands, aliases: %s", project.Name, project.Aliases)
 		cmd := &cobra.Command{
@@ -189,7 +194,7 @@ func init() {
 
 	// environment variable takes precendence over config file setting
 	if viper.GetString("LOGS") == "" {
-		configureLogging(config.Log.Level)
+		configureLogging(appConfig.Log.Level)
 	}
 
 	// removes the annoying: WARNING: Found orphan containers
@@ -199,9 +204,9 @@ func init() {
 		log.Fatalf("Failed to set environment variable: %s", err)
 	}
 
-	log.Debugf("Using image prefix '%s'", config.ImagePrefix)
+	log.Debugf("Using image prefix '%s'", appConfig.ImagePrefix)
 
-	if err := addProjects(rootCmd, config); err != nil {
+	if err := addProjects(rootCmd, appConfig); err != nil {
 		log.Fatalf("Error adding projects: %s", err)
 	}
 }
@@ -254,7 +259,6 @@ func locateConfigFile() string {
 				return configFile
 			}
 		}
-
 		currentDir = path.Clean(path.Join(currentDir, ".."))
 
 		// if we've recursed to the home directory and still no
@@ -288,13 +292,12 @@ func initConfig() {
 			if err := viper.ReadInConfig(); err != nil {
 				log.Fatal(err)
 			}
-
 			localConfig := dev.NewConfig()
 			if err := viper.Unmarshal(localConfig); err != nil {
 				log.Fatal(err)
 			}
-			dev.ExpandConfig(configFile, localConfig)
-			if err := dev.MergeConfig(config, localConfig); err != nil {
+			config.Expand(configFile, localConfig)
+			if err := config.Merge(appConfig, localConfig); err != nil {
 				log.Fatal(err)
 			}
 		}
@@ -308,13 +311,13 @@ func initConfig() {
 			if err := viper.ReadInConfig(); err != nil {
 				log.Fatal(err)
 			}
-			if err := viper.Unmarshal(&config); err != nil {
+			if err := viper.Unmarshal(appConfig); err != nil {
 				log.Fatal(err)
 			}
 		} else {
 			log.Debugln("No configuration file found")
 		}
 
-		dev.ExpandConfig(cfgFile, config)
+		config.Expand(cfgFile, appConfig)
 	}
 }
