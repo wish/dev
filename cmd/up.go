@@ -122,7 +122,7 @@ func ProjectCmdUpCreate(config *dev.Config, project *dev.Project) *cobra.Command
 		Use:   "up",
 		Short: "Create and start the " + project.Name + " containers",
 		Run: func(cmd *cobra.Command, args []string) {
-			Up(config, project, false)
+			Up(config, project, true)
 		},
 	}
 	return up
