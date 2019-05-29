@@ -19,6 +19,8 @@ import (
 var (
 	// BuildSha is used by the build to include the git sha in the --version output
 	BuildSha = "BuildSha not set (use Makefile to set)"
+	// BuildVersion is set by the Makefile with link flags for ouput in --version
+	BuildVersion = "Build not set (use Makefile to set)"
 	// BuildDate is used by the build to include the build date in the --version output
 	BuildDate = "BuildDate not set (use Makefile to set)"
 	config    dev.Config
@@ -27,6 +29,7 @@ var (
 var rootCmd = &cobra.Command{
 	Use: "dev",
 	Version: "\n" +
+		"  Version:\t" + BuildVersion + "\n" +
 		"  Built:\t" + BuildDate + "\n" +
 		"  Git commit:\t" + BuildSha + "\n" +
 		"  OS/Arch:\t" + runtime.GOOS + "/" + runtime.GOARCH,
