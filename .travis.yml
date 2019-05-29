@@ -3,6 +3,9 @@ language: go
 go:
   - "1.12.x"
 
+before_install:
+  - go get -u golang.org/x/lint/golint
+
 git:
   depth: 1
 

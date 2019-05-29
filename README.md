@@ -1,6 +1,7 @@
-# dev [![Go Report Card](https://goreportcard.com/badge/github.com/wish/dev)](https://goreportcard.com/report/github.com/wish/dev)
+# dev [![Build Status](https://travis-ci.org/wish/dev.svg?branch=master)](https://travis-ci.org/wish/dev) [![Go Report Card](https://goreportcard.com/badge/github.com/wish/dev)](https://goreportcard.com/report/github.com/wish/dev)
 
-dev is a command line tool that provides a thin layer of porcelain on top of [Docker Compose](https://docs.docker.com/compose/).
+dev is a command line tool that wraps [Docker Compose](https://docs.docker.com/compose/) to enable shared resources
+for an ideal development environment.
 
 # Background
 
