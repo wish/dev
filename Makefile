@@ -49,3 +49,14 @@ build/dev: ## Make a link to the executable for this OS type for convenience
 .PHONY: watch
 watch: ## Watch .go files for changes and rerun build (requires entr, see https://github.com/clibs/entr)
 	$(GOFILES_WATCH) | entr -rc $(MAKE)
+
+.PHONY: deb
+deb: build/dev.linux ## Bundle the dev executable in a deb file for distribution
+	fpm --input-type dir --output-type deb \
+		--name dev \
+		--version $(VERSION)$(V_DIRTY) \
+		--license MIT \
+		--maintainer shaw@vranix.com \
+		--deb-user root \
+		--deb-group root \
+		build/dev.linux=/usr/bin/dev
