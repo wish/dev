@@ -153,6 +153,6 @@ func IsContainerRunning(project, name string) (bool, error) {
 	if err != nil {
 		return false, errors.Wrap(err, "Failed to check container status")
 	}
-	log.Debugf("containers: %+v", containers)
+	//log.Debugf("containers: %+v", containers)
 	return len(containers) > 0, nil
 }
