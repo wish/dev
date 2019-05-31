@@ -95,27 +95,20 @@ func runDockerCompose(project, cmd string, composePaths []string, args ...string
 }
 
 func runOnContainer(projectName string, project *dev.Project, cmds ...string) {
-	cmdLine := []string{"-p", projectName}
+	cmdLine := []string{"exec"}
 
-	for _, path := range project.DockerComposeFilenames {
-		cmdLine = append(cmdLine, "-f", path)
-	}
-	cmdLine = append(cmdLine, "exec")
-
-	// disable tty to avoid "input device is not a tty error" if
-	// redirection detection
-	if !isatty.IsTerminal(os.Stdout.Fd()) {
-		cmdLine = append(cmdLine, "-T")
+	// avoid "input device is not a tty error"
+	if isatty.IsTerminal(os.Stdout.Fd()) {
+		cmdLine = append(cmdLine, "-it")
 	}
 
 	cmdLine = append(cmdLine, project.Name)
 
-	// append any additional arguments or flags, i.e., -d
 	for _, cmd := range cmds {
 		cmdLine = append(cmdLine, cmd)
 	}
 
-	runCommand("docker-compose", cmdLine)
+	runCommand("docker", cmdLine)
 }
 
 func addProjectCommands(projectCmd *cobra.Command, config *dev.Config, project *dev.Project) {
