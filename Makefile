@@ -4,8 +4,7 @@ GOFILES_WATCH 	:= find . -type f -iname "*.go"
 GOFILES_BUILD   := $(shell find . -type f -iname "*.go")
 PKGS 		:= $(shell go list ./...)
 
-VERSION := $(shell git describe --tags | cut -d'/' -f2 || echo "unreleased")
-V_DIRTY := $(shell git describe --exact-match HEAD > /dev/null 2>&1 || echo "-unreleased")
+VERSION := $(shell git describe --tags 2>/dev/null || echo "unreleased")
 SHA  	:= $(shell git rev-parse --short HEAD)
 
 
@@ -20,7 +19,7 @@ all: build/dev.linux build/dev.darwin ## Builds dev binaries for linux and osx
 
 .PHONY: clean
 clean: ## Removes all build artifacts
-	rm -rf build ; go clean
+	rm -rf build ; go clean ; rm -f dev_*.deb ; rm -f dev_*.changes
 
 .PHONY: lint
 lint: ## Runs linter
@@ -35,12 +34,12 @@ test: lint vet ## Run static analysis and tests
 
 build/dev.linux: $(**/*.go) test ## Creates the linux binary
 	@GOOS=linux CGO_ENABLED=0 go build -ldflags \
-	       '-X "github.com/wish/dev/cmd.BuildDate=${DATE}" -X "github.com/wish/dev/cmd.BuildSha=$(SHA)" -X "github.com/wish/dev/cmd.BuildVersion=$(VERSION)$(V_DIRTY)"' \
+	       '-X "github.com/wish/dev/cmd.BuildDate=${DATE}" -X "github.com/wish/dev/cmd.BuildSha=$(SHA)" -X "github.com/wish/dev/cmd.BuildVersion=$(VERSION)"' \
 	       -o build/dev.linux cmd/dev/*
 
 build/dev.darwin: $(**/*.go) test ## Creates the osx binary
 	@GOOS=darwin CGO_ENABLED=0 go build -ldflags \
-		'-X "github.com/wish/dev/cmd.BuildDate=${DATE}" -X "github.com/wish/dev/cmd.BuildSha=$(SHA)" -X "github.com/wish/dev/cmd.BuildVersion=$(VERSION)$(V_DIRTY)"' \
+		'-X "github.com/wish/dev/cmd.BuildDate=${DATE}" -X "github.com/wish/dev/cmd.BuildSha=$(SHA)" -X "github.com/wish/dev/cmd.BuildVersion=$(VERSION)"' \
 		-o build/dev.darwin cmd/dev/*
 
 build/dev: ## Make a link to the executable for this OS type for convenience
@@ -54,9 +53,10 @@ watch: ## Watch .go files for changes and rerun build (requires entr, see https:
 deb: build/dev.linux ## Bundle the dev executable in a deb file for distribution
 	fpm --input-type dir --output-type deb \
 		--name dev \
-		--version $(VERSION)$(V_DIRTY) \
+		--version $(VERSION) \
 		--license MIT \
 		--maintainer shaw@vranix.com \
 		--deb-user root \
 		--deb-group root \
+		--deb-generate-changes \
 		build/dev.linux=/usr/bin/dev
