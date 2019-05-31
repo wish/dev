@@ -8,6 +8,7 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/mattn/go-isatty"
 	log "github.com/sirupsen/logrus"
 	"github.com/wish/dev"
 
@@ -99,7 +100,15 @@ func runOnContainer(projectName string, project *dev.Project, cmds ...string) {
 	for _, path := range project.DockerComposeFilenames {
 		cmdLine = append(cmdLine, "-f", path)
 	}
-	cmdLine = append(cmdLine, "exec", project.Name)
+	cmdLine = append(cmdLine, "exec")
+
+	// disable tty to avoid "input device is not a tty error" if
+	// redirection detection
+	if !isatty.IsTerminal(os.Stdout.Fd()) {
+		cmdLine = append(cmdLine, "-T")
+	}
+
+	cmdLine = append(cmdLine, project.Name)
 
 	// append any additional arguments or flags, i.e., -d
 	for _, cmd := range cmds {
