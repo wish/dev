@@ -5,12 +5,12 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/docker/cli/cli/compose/loader"
+	"github.com/docker/cli/cli/compose/types"
 	errors "github.com/pkg/errors"
-	"github.com/wish/compose-file/loader"
-	"github.com/wish/compose-file/types"
 )
 
-func buildConfigDetails(dir string, source types.Dict) *types.ConfigDetails {
+func buildConfigDetails(dir string, source map[string]interface{}) *types.ConfigDetails {
 	workingDir, err := os.Getwd()
 	if err != nil {
 		panic(err)
@@ -46,6 +46,3 @@ func Parse(wd string, file string) (*types.Config, error) {
 
 	return config, nil
 }
-
-// Filter interface
-//
