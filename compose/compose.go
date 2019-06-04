@@ -21,7 +21,9 @@ func buildConfigDetails(dir string, source map[string]interface{}) *types.Config
 		ConfigFiles: []types.ConfigFile{
 			{Filename: "filename.yml", Config: source},
 		},
-		Environment: nil,
+		Environment: map[string]string{
+			"HOME": os.Getenv("HOME"),
+		},
 	}
 }
 
