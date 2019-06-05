@@ -3,23 +3,17 @@ package cmd
 import (
 	"fmt"
 	"os"
-	"os/exec"
 	"path"
 	"runtime"
 	"strings"
 
-	"github.com/mattn/go-isatty"
-	log "github.com/sirupsen/logrus"
-
-	//"github.com/wish/dev"
-	config "github.com/wish/dev/config"
-	dev "github.com/wish/dev/config"
-
-	//dev "github.com/wish/dev/config"
-
 	"github.com/mitchellh/go-homedir"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+
+	"github.com/wish/dev"
+	"github.com/wish/dev/config"
 )
 
 var (
@@ -68,104 +62,99 @@ func Execute() {
 	}
 }
 
-func runCommand(name string, args []string) {
-	log.Debugf("Running: %s %s", name, strings.Join(args, " "))
-	command := exec.Command(name, args...)
-
-	command.Stdout = os.Stdout
-	command.Stderr = os.Stderr
-	command.Stdin = os.Stdin
-
-	command.Run()
-}
-
-func runDockerCompose(project, cmd string, composePaths []string, args ...string) {
-	cmdLine := []string{"-p", project}
-
-	for _, path := range composePaths {
-		cmdLine = append(cmdLine, "-f", path)
-	}
-	// one of build, exec, etc.
-	cmdLine = append(cmdLine, cmd)
-
-	// append any additional arguments or flags, i.e., -d
-	for _, arg := range args {
-		cmdLine = append(cmdLine, arg)
-	}
-
-	runCommand("docker-compose", cmdLine)
-}
-
-func runOnContainer(projectName string, project *config.Project, cmds ...string) {
-	cmdLine := []string{"-p", projectName}
-
-	// avoid "input device is not a tty error"
-	if isatty.IsTerminal(os.Stdout.Fd()) {
-		cmdLine = append(cmdLine, "-it")
-	}
-
-	cmdLine = append(cmdLine, project.Name)
-
-	for _, cmd := range cmds {
-		cmdLine = append(cmdLine, cmd)
-	}
-
-	runCommand("docker", cmdLine)
-}
-
-func addProjectCommands(projectCmd *cobra.Command, devConfig *config.Dev, project *config.Project) {
+func addProjectCommands(projectCmd *cobra.Command, devConfig *config.Dev, project *dev.Project) {
 	build := &cobra.Command{
-		Use:   "build",
+		Use:   dev.BUILD,
 		Short: "Build the " + project.Name + " container (and its dependencies)",
+		PreRun: func(cmd *cobra.Command, args []string) {
+			initDeps()
+		},
 		Run: func(cmd *cobra.Command, args []string) {
-			registriesLogin(devConfig)
-			runDockerCompose(devConfig.ImagePrefix, "build", project.DockerComposeFilenames)
+			dev.RunDockerCompose(
+				"build",
+				devConfig.ImagePrefix,
+				project.Config.DockerComposeFilenames,
+			)
 		},
 	}
 	projectCmd.AddCommand(build)
 
-	up := ProjectCmdUpCreate(devConfig, project)
+	up := &cobra.Command{
+		Use:   dev.UP,
+		Short: "Create and start the " + project.Name + " containers",
+		PreRun: func(cmd *cobra.Command, args []string) {
+			initDeps()
+		},
+		Run: func(cmd *cobra.Command, args []string) {
+			project.Up(appConfig, true)
+		},
+	}
 	projectCmd.AddCommand(up)
 
 	ps := &cobra.Command{
-		Use:   "ps",
+		Use:   dev.PS,
 		Short: "List status of " + project.Name + " containers",
 		Run: func(cmd *cobra.Command, args []string) {
-			runDockerCompose(devConfig.ImagePrefix, "ps", project.DockerComposeFilenames)
+			dev.RunDockerCompose(
+				"ps",
+				devConfig.ImagePrefix,
+				project.Config.DockerComposeFilenames,
+			)
 		},
 	}
 	projectCmd.AddCommand(ps)
 
-	sh := ProjectCmdShCreate(devConfig, project)
+	sh := &cobra.Command{
+		Use:   dev.SH,
+		Short: "Get a shell on the " + project.Name + " container",
+		Args:  cobra.ArbitraryArgs,
+		// Need to handle the flags manually. We do this so that we can
+		// send in flags to the container without quoting the entire
+		// string-- in the name of usability.
+		DisableFlagParsing: true,
+		Run: func(cmd *cobra.Command, args []string) {
+			// move this to args()
+			if len(args) > 0 && strings.HasPrefix(args[0], "-") {
+				cmd.Help()
+				return
+			}
+			project.Shell(appConfig, args)
+		},
+	}
 	projectCmd.AddCommand(sh)
 
 	down := &cobra.Command{
-		Use:   "down",
+		Use:   dev.DOWN,
 		Short: "Stop and destroy the " + project.Name + " project container",
 		Long: `This stops and destroys the container of the same name as the directory in which
 its docker-compose.yml file is placed. It does not stop or destroy any containers that
 may have been brought up to support this project, which is the case for projects that
 use more one docker-compose.yml file.`,
 		Run: func(cmd *cobra.Command, args []string) {
-			i := len(project.DockerComposeFilenames)
+			i := len(project.Config.DockerComposeFilenames)
 			// for now we assume the non-shared config is last
 			// compose file listed. Needs fixing.
-			runDockerCompose(devConfig.ImagePrefix, "down", []string{project.DockerComposeFilenames[i-1]})
+			dev.RunDockerCompose(
+				"down",
+				devConfig.ImagePrefix,
+				[]string{project.Config.DockerComposeFilenames[i-1]},
+			)
 		},
 	}
 	projectCmd.AddCommand(down)
 }
 
 func addProjects(cmd *cobra.Command, config *config.Dev) error {
-	for _, project := range config.RunnableProjects() {
-		log.Debugf("Adding %s to project commands, aliases: %s", project.Name, project.Aliases)
+	for _, projectConfig := range config.RunnableProjects() {
+		log.Debugf("Adding %s to project commands, aliases: %s", projectConfig.Name, projectConfig.Aliases)
 		cmd := &cobra.Command{
-			Use:     project.Name,
-			Short:   "Run dev commands on the " + project.Name + " project",
-			Aliases: project.Aliases,
+			Use:     projectConfig.Name,
+			Short:   "Run dev commands on the " + projectConfig.Name + " project",
+			Aliases: projectConfig.Aliases,
 		}
 		rootCmd.AddCommand(cmd)
 
+		project := dev.NewProject(projectConfig)
 		addProjectCommands(cmd, config, project)
 	}
 	return nil
@@ -223,8 +212,8 @@ func getDefaultConfigDirectory() string {
 }
 
 func getAppConfigPaths(dir string) []string {
-	defaultConfigs := make([]string, len(dev.ConfigFileDefaults))
-	for i, filename := range dev.ConfigFileDefaults {
+	defaultConfigs := make([]string, len(config.ConfigFileDefaults))
+	for i, filename := range config.ConfigFileDefaults {
 		defaultConfigs[i] = path.Join(dir, filename)
 	}
 	return defaultConfigs
@@ -279,6 +268,30 @@ func locateConfigFile() string {
 	return ""
 }
 
+func createObjectMap(devConfig *config.Dev) map[string]interface{} {
+	objMap := make(map[string]interface{})
+
+	for name, opts := range devConfig.Projects {
+		objMap[name] = dev.NewProject(opts)
+	}
+
+	for name, opts := range devConfig.Networks {
+		objMap[name] = dev.NewNetwork(name, opts)
+	}
+
+	for name, opts := range devConfig.Registries {
+		objMap[name] = dev.NewRegistry(opts)
+	}
+
+	return objMap
+
+}
+
+// initDeps constructs the dag for the specified project command and initializes
+// the appropriate dependencies.
+func initDeps() {
+}
+
 // initConfig locates the configuration file and loads it into the Config
 func initConfig() {
 	cfgFile := viper.GetString("CONFIG")
@@ -292,7 +305,7 @@ func initConfig() {
 			if err := viper.ReadInConfig(); err != nil {
 				log.Fatal(err)
 			}
-			localConfig := dev.NewConfig()
+			localConfig := config.NewConfig()
 			if err := viper.Unmarshal(localConfig); err != nil {
 				log.Fatal(err)
 			}
@@ -302,7 +315,7 @@ func initConfig() {
 			}
 		}
 	} else {
-		// config file/s not specified in environment variable, see if one
+		// config file/s not specified in environment variable. see if one
 		// can be found
 		cfgFile = locateConfigFile()
 		if cfgFile != "" {
