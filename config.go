@@ -149,8 +149,8 @@ func projectNameFromPath(projectPath string) string {
 
 func newProjectConfig(projectPath, composeFilename string) *Project {
 	project := &Project{
-		Directory: projectPath,
-		Name:      projectNameFromPath(projectPath),
+		Directory:              projectPath,
+		Name:                   projectNameFromPath(projectPath),
 		DockerComposeFilenames: []string{composeFilename},
 	}
 
@@ -240,20 +240,25 @@ func ExpandConfig(filename string, config *Config) {
 		}
 	}
 
-	// If there's a docker-compose file in the current directory
-	// that's not specified in the config file create a default project
-	// with the name of the directory.
-	if hasConfig, filename := directoryContainsDockerComposeConfig(config.Dir); hasConfig {
-		found := false
-		for _, project := range config.Projects {
-			if project.Directory == config.Dir {
-				found = true
+	// The code below does not work because project.Directory is not set!
+	// Temporarily working around by only adding projects when a dev config
+	// file is not found.
+	if config.Filename == "" {
+		// If there's a docker-compose file in the current directory
+		// that's not specified in the config file create a default project
+		// with the name of the directory.
+		if hasConfig, filename := directoryContainsDockerComposeConfig(config.Dir); hasConfig {
+			found := false
+			for _, project := range config.Projects {
+				if project.Directory == config.Dir {
+					found = true
+				}
 			}
-		}
-		if found == false {
-			log.Debugf("Creating default project config for project in %s", config.Dir)
-			project := newProjectConfig(config.Dir, filename)
-			config.Projects[project.Name] = project
+			if found == false {
+				log.Debugf("Creating default project config for project in %s", config.Dir)
+				project := newProjectConfig(config.Dir, filename)
+				config.Projects[project.Name] = project
+			}
 		}
 	}
 
