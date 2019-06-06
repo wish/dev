@@ -24,7 +24,8 @@ var (
 	BuildVersion = "Build not set (use Makefile to set)"
 	// BuildDate is used by the build to include the build date in the --version output
 	BuildDate = "BuildDate not set (use Makefile to set)"
-	config    dev.Config
+	// config stores all of the configuration data in the dev configuration files
+	config = dev.NewConfig()
 )
 
 var rootCmd = &cobra.Command{
@@ -40,7 +41,7 @@ var rootCmd = &cobra.Command{
 
 func configureLogging(logLevel string) {
 	if logLevel == "" {
-		logLevel = dev.LogLevelDefault
+		logLevel = config.Log.Level
 	}
 	logRusLevel, err := log.ParseLevel(logLevel)
 	if err != nil {
@@ -60,10 +61,6 @@ func Execute() {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-}
-
-func quote(str string) string {
-	return fmt.Sprintf("%s", str)
 }
 
 func runCommand(name string, args []string) {
@@ -184,25 +181,27 @@ func init() {
 	// DisableFlagParsing is set for the 'sh' command so users do not have to
 	// surround command line with quotes or preceed with --.
 
-	// set default log level, use DEV_LOGS environment variable if specified (info, debug, warn)
+	// set default log level, use DEV_LOGS environment variable if
+	// specified (info, debug, warn)
 	level := viper.GetString("LOGS")
 	configureLogging(level)
 	initConfig()
 
-	// environment variable takes precendence of config file setting
+	// environment variable takes precendence over config file setting
 	if viper.GetString("LOGS") == "" {
 		configureLogging(config.Log.Level)
 	}
 
-	// adjust log level config file specification
-
-	// following removes the following: WARNING: Found orphan containers for this project.
+	// removes the annoying: WARNING: Found orphan containers
+	// for this project.
 	err := os.Setenv("COMPOSE_IGNORE_ORPHANS", "True")
 	if err != nil {
 		log.Fatalf("Failed to set environment variable: %s", err)
 	}
 
-	if err := addProjects(rootCmd, &config); err != nil {
+	log.Debugf("Using image prefix '%s'", config.ImagePrefix)
+
+	if err := addProjects(rootCmd, config); err != nil {
 		log.Fatalf("Error adding projects: %s", err)
 	}
 }
@@ -280,30 +279,42 @@ func locateConfigFile() string {
 func initConfig() {
 	cfgFile := viper.GetString("CONFIG")
 	if cfgFile != "" {
-		log.Debugf("Using env variable specified config file: %s", cfgFile)
-		// specified on the command line
-		viper.SetConfigFile(cfgFile)
+		files := strings.Split(cfgFile, ":")
+		for _, configFile := range files {
+			log.Debugf("Loading env variable specified config file: %s", configFile)
+			// viper has merge capabilities, but we'd need to remove the relative
+			// paths before the merging
+			viper.SetConfigFile(configFile)
+			if err := viper.ReadInConfig(); err != nil {
+				log.Fatal(err)
+			}
+
+			localConfig := dev.NewConfig()
+			if err := viper.Unmarshal(localConfig); err != nil {
+				log.Fatal(err)
+			}
+			dev.ExpandConfig(configFile, localConfig)
+			if err := dev.MergeConfig(config, localConfig); err != nil {
+				log.Fatal(err)
+			}
+		}
 	} else {
-		// try to locate a configuration file. Enables you to use the
-		// tool for more than one project a time or all together..
+		// config file/s not specified in environment variable, see if one
+		// can be found
 		cfgFile = locateConfigFile()
 		if cfgFile != "" {
 			log.Debugf("Found config file: %s\n", cfgFile)
 			viper.SetConfigFile(cfgFile)
+			if err := viper.ReadInConfig(); err != nil {
+				log.Fatal(err)
+			}
+			if err := viper.Unmarshal(&config); err != nil {
+				log.Fatal(err)
+			}
 		} else {
 			log.Debugln("No configuration file found")
 		}
-	}
 
-	if cfgFile != "" {
-		if err := viper.ReadInConfig(); err != nil {
-			log.Fatal(err)
-		}
+		dev.ExpandConfig(cfgFile, config)
 	}
-
-	if err := viper.Unmarshal(&config); err != nil {
-		log.Fatal(err)
-	}
-
-	dev.ExpandConfig(cfgFile, &config)
 }

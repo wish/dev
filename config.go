@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/docker/docker/api/types"
@@ -113,6 +114,20 @@ type Registry struct {
 	ContinueOnFailure bool `mapstructure:"continue_on_failure"`
 }
 
+// NewConfig structs the default configuration structure for dev driven
+// projects.
+func NewConfig() *Config {
+	config := &Config{
+		Projects:   make(map[string]*Project),
+		Networks:   make(map[string]*types.NetworkCreate),
+		Registries: make(map[string]*Registry),
+		Log: LogConfig{
+			Level: LogLevelDefault,
+		},
+	}
+	return config
+}
+
 // RunnableProjects returns the Project configuration of each Project
 // that has a docker-compose.yml file and is not hidden by configuration.
 func (c *Config) RunnableProjects() []*Project {
@@ -149,8 +164,8 @@ func projectNameFromPath(projectPath string) string {
 
 func newProjectConfig(projectPath, composeFilename string) *Project {
 	project := &Project{
-		Directory:              projectPath,
-		Name:                   projectNameFromPath(projectPath),
+		Directory: projectPath,
+		Name:      projectNameFromPath(projectPath),
 		DockerComposeFilenames: []string{composeFilename},
 	}
 
@@ -183,22 +198,27 @@ func setDefaults(config *Config) {
 		}
 	}
 
-	if config.Log.Level == "" {
-		config.Log.Level = LogLevelDefault
-	}
-
 	if config.ImagePrefix == "" {
 		config.ImagePrefix = filepath.Base(config.Dir)
+	}
+
+	for name, registry := range config.Registries {
+		registry.Name = name
+	}
+
+	for name, project := range config.Projects {
+		// if user did not specify a custom project container name,
+		// the container name is assumed to be the same name as the
+		// project itself.
+		if project.Name == "" {
+			project.Name = name
+		}
 	}
 }
 
 // ExpandConfig makes modifications to the configuration structure
 // provided by the user before it is used by dev.
 func ExpandConfig(filename string, config *Config) {
-	if config.Projects == nil {
-		config.Projects = make(map[string]*Project)
-	}
-
 	// Ensure that relative paths used in the configuration file are
 	// relative to the actual project, not to the location of a link.
 	if filename != "" {
@@ -265,4 +285,68 @@ func ExpandConfig(filename string, config *Config) {
 	if len(config.Projects) == 0 {
 		fmt.Println(NoProjectWarning)
 	}
+}
+
+func projectExists(config *Config, name string) bool {
+	for _, project := range config.Projects {
+		if project.Name == name {
+			return true
+		}
+	}
+	return false
+}
+
+func isDefaultConfig(config *Config) bool {
+	return (len(config.Projects) == 0 && len(config.Networks) == 0 &&
+		len(config.Registries) == 0 && config.ImagePrefix == "")
+}
+
+// MergeConfig adds the configuration from source to the configuration from
+// target. An error is returned if there is an object with the same name
+// in target and source or if the configs cannot be merged for whatever reason.
+func MergeConfig(target *Config, source *Config) error {
+	if isDefaultConfig(target) {
+		// project wide settings are set by the first config listed
+		target.ImagePrefix = source.ImagePrefix
+		target.Log.Level = source.Log.Level
+		target.Dir = source.Dir
+		target.Filename = source.Filename
+
+	} else if source.ImagePrefix != target.ImagePrefix {
+		// Not sure I like forcing this.. but if users switch back and forth
+		// between a project that uses multiple configurations and then start
+		// using one of those with only one configuration, some dev commands
+		// will not function b/c docker will change the name of the container
+		// b/c it's using a different image name, usually appending a _#.
+		return errors.Errorf("mismatched image prefix '%s' != '%s'", target.ImagePrefix, source.ImagePrefix)
+	}
+
+	for _, project := range source.Projects {
+		if projectExists(target, project.Name) {
+			return errors.Errorf("duplicate project with name %s found in %s", project.Name, source.Filename)
+		}
+	}
+	for _, project := range source.Projects {
+		target.Projects[project.Name] = project
+	}
+
+	for name := range source.Networks {
+		if _, ok := target.Networks[name]; ok {
+			return errors.Errorf("duplicate network with name %s found in %s", name, source.Filename)
+		}
+	}
+	for name, network := range source.Networks {
+		target.Networks[name] = network
+	}
+
+	for name := range source.Registries {
+		if _, ok := target.Registries[name]; ok {
+			return errors.Errorf("duplicate registry with name %s found in %s", name, source.Filename)
+		}
+	}
+	for name, registry := range source.Registries {
+		target.Registries[name] = registry
+	}
+
+	return nil
 }
