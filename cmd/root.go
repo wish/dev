@@ -70,8 +70,7 @@ func addProjectCommands(projectCmd *cobra.Command, devConfig *config.Dev, projec
 			initDeps()
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			dev.RunDockerCompose(
-				"build",
+			dev.RunComposeBuild(
 				devConfig.ImagePrefix,
 				project.Config.DockerComposeFilenames,
 			)
@@ -95,8 +94,7 @@ func addProjectCommands(projectCmd *cobra.Command, devConfig *config.Dev, projec
 		Use:   dev.PS,
 		Short: "List status of " + project.Name + " containers",
 		Run: func(cmd *cobra.Command, args []string) {
-			dev.RunDockerCompose(
-				"ps",
+			dev.RunComposePs(
 				devConfig.ImagePrefix,
 				project.Config.DockerComposeFilenames,
 			)
@@ -134,8 +132,7 @@ use more one docker-compose.yml file.`,
 			i := len(project.Config.DockerComposeFilenames)
 			// for now we assume the non-shared config is last
 			// compose file listed. Needs fixing.
-			dev.RunDockerCompose(
-				"down",
+			dev.RunComposeDown(
 				devConfig.ImagePrefix,
 				[]string{project.Config.DockerComposeFilenames[i-1]},
 			)

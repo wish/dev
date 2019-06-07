@@ -33,7 +33,7 @@ func (r *Project) PreRun(command string, appConfig *c.Dev, project *c.Project) {
 	}
 	// handle dependencies for this project
 
-	RunDockerCompose("up", appConfig.ImagePrefix, r.Config.DockerComposeFilenames, "-d")
+	RunComposeUp(appConfig.ImagePrefix, r.Config.DockerComposeFilenames, "-d")
 }
 
 // Up brings up the specified project with its dependencies and optionally
@@ -43,9 +43,9 @@ func (r *Project) Up(appConfig *c.Dev, followLogs bool) {
 
 	// network dependency
 
-	RunDockerCompose("up", appConfig.ImagePrefix, r.Config.DockerComposeFilenames, "-d")
+	RunComposeUp(appConfig.ImagePrefix, r.Config.DockerComposeFilenames, "-d")
 	if followLogs {
-		RunDockerCompose("logs", appConfig.ImagePrefix, r.Config.DockerComposeFilenames, "-f", r.Config.Name)
+		RunComposeLogs(appConfig.ImagePrefix, r.Config.DockerComposeFilenames, "-f", r.Config.Name)
 	}
 }
 

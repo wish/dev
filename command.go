@@ -25,7 +25,7 @@ func runCommand(name string, args []string) {
 
 // RunDockerCompose runs docker-compose wih the specified subcommand and
 // arguments.
-func RunDockerCompose(cmd, project string, composePaths []string, args ...string) {
+func runDockerCompose(cmd, project string, composePaths []string, args ...string) {
 	cmdLine := []string{"-p", project}
 
 	for _, path := range composePaths {
@@ -40,6 +40,36 @@ func RunDockerCompose(cmd, project string, composePaths []string, args ...string
 	}
 
 	runCommand("docker-compose", cmdLine)
+}
+
+// RunComposeBuild runs docker-compose build with the specified docker compose
+// files and args.
+func RunComposeBuild(project string, composePaths []string, args ...string) {
+	runDockerCompose("build", project, composePaths, args...)
+}
+
+// RunComposeUp runs docker-compose up with the specified docker compose
+// files and args.
+func RunComposeUp(project string, composePaths []string, args ...string) {
+	runDockerCompose("up", project, composePaths, args...)
+}
+
+// RunComposePs runs docker-compose ps with the specified docker compose
+// files and args.
+func RunComposePs(project string, composePaths []string, args ...string) {
+	runDockerCompose("ps", project, composePaths, args...)
+}
+
+// RunComposeLogs runs docker-compose logs with the specified docker compose
+// files and args.
+func RunComposeLogs(project string, composePaths []string, args ...string) {
+	runDockerCompose("logs", project, composePaths, args...)
+}
+
+// RunComposeDown runs docker-compose down with the specified docker compose
+// files and args.
+func RunComposeDown(project string, composePaths []string, args ...string) {
+	runDockerCompose("down", project, composePaths, args...)
 }
 
 // RunOnContainer runs the commands on the Project container specified in
