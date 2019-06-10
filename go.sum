@@ -32,6 +32,13 @@ github.com/golang/protobuf v1.2.0 h1:P3YflyNX/ehuJFLhxviNdFxQPkGK5cDcApsge1SqnvM
 github.com/golang/protobuf v1.2.0/go.mod h1:6lQm79b+lXiMfvg/cZm0SGofjICqVBUtrP5yJMmIC1U=
 github.com/google/go-cmp v0.3.0 h1:crn/baboCvb5fXaQ0IJ1SGTsTVrWpDsCWC8EGETZijY=
 github.com/google/go-cmp v0.3.0/go.mod h1:8QqcDgzrUqlUb/G2PQTWiueGozuR1884gddMywk6iLU=
+github.com/goombaio/dag v0.0.0-20181006234417-a8874b1f72ff h1:TWR7dWx09TvI7hfy3H1TXwazeOCRUC5+Gove4hefk6o=
+github.com/goombaio/dag v0.0.0-20181006234417-a8874b1f72ff/go.mod h1:QulI5HOQMQJGBYLdTkWDiHWvz+E323DSypoD42v2wEU=
+github.com/goombaio/orderedmap v0.0.0-20180919235155-bc5581d0235c/go.mod h1:YKu81H3RSd1cFh0d7NhvUoTtUC9IY/vBX0WUQb1/o4Y=
+github.com/goombaio/orderedmap v0.0.0-20180924084748-ba921b7e2419 h1:SajEQ6tktpF9SRIuzbiPOX9AEZZ53Bvw0k9Mzrts8Lg=
+github.com/goombaio/orderedmap v0.0.0-20180924084748-ba921b7e2419/go.mod h1:YKu81H3RSd1cFh0d7NhvUoTtUC9IY/vBX0WUQb1/o4Y=
+github.com/goombaio/orderedset v0.0.0-20180924084730-d1b9fdd81eca h1:RiwElNGM1lrT2a3hAuQn36nM4HWI4bOgIWi077O33Yk=
+github.com/goombaio/orderedset v0.0.0-20180924084730-d1b9fdd81eca/go.mod h1:6oeyMssEjbCGe1BCbSckd6C1TYxeP5Cgp8BoKejycj0=
 github.com/gorilla/mux v1.7.2 h1:zoNxOV7WjqXptQOVngLmcSQgXmgk4NMz1HibBchjl/I=
 github.com/gorilla/mux v1.7.2/go.mod h1:1lud6UwP+6orDFRuTfBEV8e9/aOM/c4fVVCaMa2zaAs=
 github.com/hashicorp/hcl v1.0.0 h1:0Anlzjpi4vEasTeNFn2mLJgTSwt0+6sfsiTG8qcWGx4=

@@ -89,6 +89,8 @@ type Project struct {
 	// Shell used to enter the project container with 'sh' command,
 	// default is /bin/bash
 	Shell string `mapstructure:"shell"`
+	// Projects, registries, networks on which this project depends.
+	Dependencies []string `mapstructure:"depends_on"`
 }
 
 // Registry repesents the configuration required to model a container registry.
@@ -164,8 +166,8 @@ func projectNameFromPath(projectPath string) string {
 
 func newProjectConfig(projectPath, composeFilename string) *Project {
 	project := &Project{
-		Directory: projectPath,
-		Name:      projectNameFromPath(projectPath),
+		Directory:              projectPath,
+		Name:                   projectNameFromPath(projectPath),
 		DockerComposeFilenames: []string{composeFilename},
 	}
 
