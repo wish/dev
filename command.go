@@ -7,7 +7,6 @@ import (
 
 	"github.com/mattn/go-isatty"
 	log "github.com/sirupsen/logrus"
-	"github.com/wish/dev/config"
 )
 
 // A dumping ground for utilities used across commands that use exec.Command to run..
@@ -72,17 +71,17 @@ func RunComposeDown(project string, composePaths []string, args ...string) {
 	runDockerCompose("down", project, composePaths, args...)
 }
 
-// RunOnContainer runs the commands on the Project container specified in
-// config.Project using the docker command.
-func RunOnContainer(projectName string, project *config.Project, cmds ...string) {
-	cmdLine := []string{"-p", projectName}
+// RunOnContainer runs the commands on the container with the specified
+// name using the 'docker' command.
+func RunOnContainer(containerName string, cmds ...string) {
+	cmdLine := []string{"exec"}
 
 	// avoid "input device is not a tty error"
 	if isatty.IsTerminal(os.Stdout.Fd()) {
 		cmdLine = append(cmdLine, "-it")
 	}
 
-	cmdLine = append(cmdLine, project.Name)
+	cmdLine = append(cmdLine, containerName)
 
 	for _, cmd := range cmds {
 		cmdLine = append(cmdLine, cmd)

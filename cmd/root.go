@@ -67,7 +67,9 @@ func addProjectCommands(projectCmd *cobra.Command, devConfig *config.Dev, projec
 		Use:   dev.BUILD,
 		Short: "Build the " + project.Name + " container (and its dependencies)",
 		PreRun: func(cmd *cobra.Command, args []string) {
-			initDeps()
+			if err := dev.InitDeps(appConfig, dev.BUILD, project); err != nil {
+				log.Fatalf("dependency initialization error: %s", err)
+			}
 		},
 		Run: func(cmd *cobra.Command, args []string) {
 			dev.RunComposeBuild(
@@ -82,7 +84,9 @@ func addProjectCommands(projectCmd *cobra.Command, devConfig *config.Dev, projec
 		Use:   dev.UP,
 		Short: "Create and start the " + project.Name + " containers",
 		PreRun: func(cmd *cobra.Command, args []string) {
-			initDeps()
+			if err := dev.InitDeps(appConfig, dev.UP, project); err != nil {
+				log.Fatalf("dependency initialization error: %s", err)
+			}
 		},
 		Run: func(cmd *cobra.Command, args []string) {
 			project.Up(appConfig, true)
@@ -263,30 +267,6 @@ func locateConfigFile() string {
 
 	}
 	return ""
-}
-
-func createObjectMap(devConfig *config.Dev) map[string]interface{} {
-	objMap := make(map[string]interface{})
-
-	for name, opts := range devConfig.Projects {
-		objMap[name] = dev.NewProject(opts)
-	}
-
-	for name, opts := range devConfig.Networks {
-		objMap[name] = dev.NewNetwork(name, opts)
-	}
-
-	for name, opts := range devConfig.Registries {
-		objMap[name] = dev.NewRegistry(opts)
-	}
-
-	return objMap
-
-}
-
-// initDeps constructs the dag for the specified project command and initializes
-// the appropriate dependencies.
-func initDeps() {
 }
 
 // initConfig locates the configuration file and loads it into the Config

@@ -17,7 +17,7 @@ type Project struct {
 	Config *c.Project
 }
 
-// NewProject is a Project constructor.
+// NewProject is the Project constructor.
 func NewProject(config *c.Project) *Project {
 	return &Project{
 		Name:   config.Name,
@@ -25,40 +25,49 @@ func NewProject(config *c.Project) *Project {
 	}
 }
 
-// PreRun implements the Dependency interface; will bring up the project prior
+// PreRun implements the Dependency interface. It brings up the project prior
 // to the shell and up commads.
-func (r *Project) PreRun(command string, appConfig *c.Dev, project *c.Project) {
+func (p *Project) PreRun(command string, appConfig *c.Dev, project *Project) {
 	if !SliceContainsString([]string{UP, SH}, command) {
 		return
 	}
-	// handle dependencies for this project
 
-	RunComposeUp(appConfig.ImagePrefix, r.Config.DockerComposeFilenames, "-d")
+	RunComposeUp(appConfig.ImagePrefix, p.Config.DockerComposeFilenames, "-d")
+}
+
+// Dependencies implements the Depedency interface. It returns a list of
+// the names of its dependencies. These can be names of other projects,
+// networks or registries.
+func (p *Project) Dependencies() []string {
+	return p.Config.Dependencies
+}
+
+// GetName returns the name of the project as configured by the user in the dev
+// configuration file.
+func (p *Project) GetName() string {
+	return p.Name
 }
 
 // Up brings up the specified project with its dependencies and optionally
 // tails the logs of the project container.
-func (r *Project) Up(appConfig *c.Dev, followLogs bool) {
-	// registry dependency
+func (p *Project) Up(appConfig *c.Dev, followLogs bool) {
+	RunComposeUp(appConfig.ImagePrefix, p.Config.DockerComposeFilenames, "-d")
 
-	// network dependency
-
-	RunComposeUp(appConfig.ImagePrefix, r.Config.DockerComposeFilenames, "-d")
 	if followLogs {
-		RunComposeLogs(appConfig.ImagePrefix, r.Config.DockerComposeFilenames, "-f", r.Config.Name)
+		RunComposeLogs(appConfig.ImagePrefix, p.Config.DockerComposeFilenames, "-f", p.Config.Name)
 	}
 }
 
 // Shell runs commands or creates an interfactive shell on the Project
 // container.
-func (r *Project) Shell(appConfig *c.Dev, args []string) {
-	running, err := docker.IsContainerRunning(appConfig.ImagePrefix, r.Config.Name)
+func (p *Project) Shell(appConfig *c.Dev, args []string) {
+	running, err := docker.IsContainerRunning(appConfig.ImagePrefix, p.Config.Name)
 	if err != nil {
 		log.Fatalf("Error communicating with docker daemon, is it up? %s", err)
 	}
 	if !running {
-		log.Infof("Project %s not running, bringing it up", r.Config.Name)
-		r.Up(appConfig, false)
+		log.Infof("Project %s not running, bringing it up", p.Config.Name)
+		p.Up(appConfig, false)
 	}
 
 	// Get current directory, attempt to find its location
@@ -83,11 +92,11 @@ func (r *Project) Shell(appConfig *c.Dev, args []string) {
 
 	if len(args) == 0 {
 		// no subcommands, so just provide a shell
-		args = append(args, r.Config.Shell)
+		args = append(args, p.Config.Shell)
 	}
 
-	cmdLine := []string{r.Config.Shell, "-c",
+	cmdLine := []string{p.Config.Shell, "-c",
 		fmt.Sprintf("cd %s ; %s", relativePath, strings.Join(args, " "))}
 
-	RunOnContainer(appConfig.ImagePrefix, r.Config, cmdLine...)
+	RunOnContainer(p.Name, cmdLine...)
 }

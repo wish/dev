@@ -21,8 +21,8 @@ func NewRegistry(config *c.Registry) *Registry {
 	}
 }
 
-// PreRun implementst the Dependency interface.
-func (r *Registry) PreRun(command string, appConfig *c.Dev, project *c.Project) {
+// PreRun implements the Dependency interface.
+func (r *Registry) PreRun(command string, appConfig *c.Dev, project *Project) {
 	if !SliceContainsString([]string{BUILD, UP}, command) {
 		return
 	}
@@ -38,4 +38,15 @@ func (r *Registry) PreRun(command string, appConfig *c.Dev, project *c.Project) 
 	} else {
 		log.Debugf("Logged in to registry %s at %s", r.Config.Name, r.Config.URL)
 	}
+}
+
+// Dependencies implements the Dependency interface.
+func (r *Registry) Dependencies() []string {
+	return []string{}
+}
+
+// GetName returns the name of the registry as defined by the user in the dev
+// configuration file.
+func (r *Registry) GetName() string {
+	return r.Config.Name
 }

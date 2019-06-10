@@ -12,6 +12,7 @@ require (
 	github.com/docker/go-units v0.4.0 // indirect
 	github.com/gogo/protobuf v1.2.1 // indirect
 	github.com/google/go-cmp v0.3.0 // indirect
+	github.com/goombaio/dag v0.0.0-20181006234417-a8874b1f72ff
 	github.com/gorilla/mux v1.7.2 // indirect
 	github.com/imdario/mergo v0.3.7 // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
