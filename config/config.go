@@ -130,19 +130,6 @@ func NewConfig() *Dev {
 	return config
 }
 
-// RunnableProjects returns the Project configuration of each Project
-// that has a docker-compose.yml file and is not hidden by configuration.
-func (c *Dev) RunnableProjects() []*Project {
-	var projects []*Project
-
-	for _, project := range c.Projects {
-		if len(project.DockerComposeFilenames) > 0 && !project.Hidden {
-			projects = append(projects, project)
-		}
-	}
-	return projects
-}
-
 func pathToDockerComposeFilenames(directory string) []string {
 	paths := make([]string, len(dockerComposeFilenames))
 	for _, filename := range dockerComposeFilenames {

@@ -146,12 +146,13 @@ use more one docker-compose.yml file.`,
 }
 
 func addProjects(cmd *cobra.Command, config *config.Dev) error {
-	for _, projectConfig := range config.RunnableProjects() {
+	for _, projectConfig := range config.Projects {
 		log.Debugf("Adding %s to project commands, aliases: %s", projectConfig.Name, projectConfig.Aliases)
 		cmd := &cobra.Command{
 			Use:     projectConfig.Name,
 			Short:   "Run dev commands on the " + projectConfig.Name + " project",
 			Aliases: projectConfig.Aliases,
+			Hidden:  projectConfig.Hidden,
 		}
 		rootCmd.AddCommand(cmd)
 
