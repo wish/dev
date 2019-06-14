@@ -137,7 +137,7 @@ func RemoveContainerIfRequired(networkName, networkID string, containerNames []s
 
 // IsContainerRunning checks if there is a container with status "up" for the
 // specified project.
-func IsContainerRunning(project, name string) (bool, error) {
+func IsContainerRunning(name string) (bool, error) {
 	cli, err := getDockerClient()
 	if err != nil {
 		return false, errors.Wrap(err, "failed to create docker client")

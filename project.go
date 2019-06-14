@@ -61,7 +61,7 @@ func (p *Project) Up(appConfig *c.Dev, followLogs bool) {
 // Shell runs commands or creates an interfactive shell on the Project
 // container.
 func (p *Project) Shell(appConfig *c.Dev, args []string) {
-	running, err := docker.IsContainerRunning(appConfig.ImagePrefix, p.Config.Name)
+	running, err := docker.IsContainerRunning(p.Config.Name)
 	if err != nil {
 		log.Fatalf("Error communicating with docker daemon, is it up? %s", err)
 	}
