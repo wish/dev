@@ -78,7 +78,8 @@ type Project struct {
 	// The paths of the docker compose files for this project. Can be
 	// relative or absolute paths.
 	DockerComposeFilenames []string `mapstructure:"docker_compose_files"`
-	// The path of the root of the project (or its basename). Do we need this?
+	// Directory is the full-path to the location of the dev configuration
+	// file that contains this project configuration.
 	Directory string `mapstructure:"directory"`
 	// Ignored if set by user.
 	Name string `mapstructure:"name"`
@@ -202,6 +203,11 @@ func setDefaults(config *Dev) {
 		if project.Name == "" {
 			project.Name = name
 		}
+		// Have to remember where the project was defined so we can
+		// figure out relative directories when launching commands. See
+		// Project.Shell. This is also passed in when parsing docker-compose
+		// files where it used to load env files.
+		project.Directory = filepath.Dir(config.Filename)
 	}
 }
 

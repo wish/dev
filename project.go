@@ -3,7 +3,6 @@ package dev
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 	"strings"
 
 	log "github.com/sirupsen/logrus"
@@ -78,9 +77,9 @@ func (p *Project) Shell(appConfig *c.Dev, args []string) {
 	if err != nil {
 		log.Fatalf("Failed to get current directory: %s", err)
 	}
-	configDir := filepath.Dir(appConfig.Filename)
 
 	relativePath := ""
+	configDir := p.Config.Directory
 	if strings.HasPrefix(cwd, configDir) {
 		start := strings.Index(cwd, configDir) + len(configDir) + 1
 		if start < len(cwd) {
