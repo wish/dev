@@ -23,7 +23,26 @@ for an ideal development environment.
 
 # Installing
 
-Binaries available for linux and and osx here.
+Binaries available for linux and and osx on the [releases](https://github.com/wish/dev/releases) page.
+
+## Ubuntu
+
+Dev is bundled as deb and published to the wishlaunchpad/ppa on launchpad.net.
+
+
+```bash
+sudo add-apt-repository ppa:wishlaunchpad/ppa
+sudo apt install dev
+```
+
+## OSX
+
+Dev can be installed with Homebrew.
+
+```bash
+brew tap wish/homebrew-wish
+brew install dev
+```
 
 # Contributing
 
