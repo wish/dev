@@ -27,7 +27,7 @@ Binaries available for linux and and osx on the [releases](https://github.com/wi
 
 ## Ubuntu
 
-Dev is bundled as deb and published to the wishlaunchpad/ppa on launchpad.net.
+Dev is bundled as a deb and made available as a ppa on launchpad.
 
 
 ```bash
@@ -41,7 +41,7 @@ Dev can be installed with Homebrew.
 
 ```bash
 brew tap wish/homebrew-wish
-brew install dev
+brew install wish-dev
 ```
 
 # Contributing
