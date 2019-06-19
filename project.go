@@ -47,14 +47,16 @@ func (p *Project) GetName() string {
 	return p.Name
 }
 
-// Up brings up the specified project with its dependencies and optionally
-// tails the logs of the project container.
-func (p *Project) Up(appConfig *c.Dev, followLogs bool) {
+// Up brings up the specified project container with its dependencies.
+func (p *Project) Up(appConfig *c.Dev) {
 	RunComposeUp(appConfig.ImagePrefix, p.Config.DockerComposeFilenames, "-d")
+}
 
-	if followLogs {
-		RunComposeLogs(appConfig.ImagePrefix, p.Config.DockerComposeFilenames, "-f", p.Config.Name)
-	}
+// UpFollowProjectLogs brings up the specified project with its dependencies and
+// tails the logs of the project container.
+func (p *Project) UpFollowProjectLogs(appConfig *c.Dev) {
+	p.Up(appConfig)
+	RunComposeLogs(appConfig.ImagePrefix, p.Config.DockerComposeFilenames, "-f", p.Config.Name)
 }
 
 // Shell runs commands or creates an interfactive shell on the Project
@@ -66,7 +68,7 @@ func (p *Project) Shell(appConfig *c.Dev, args []string) {
 	}
 	if !running {
 		log.Infof("Project %s not running, bringing it up", p.Config.Name)
-		p.Up(appConfig, false)
+		p.Up(appConfig)
 	}
 
 	// Get current directory, attempt to find its location

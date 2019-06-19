@@ -89,7 +89,7 @@ func addProjectCommands(projectCmd *cobra.Command, devConfig *config.Dev, projec
 			}
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			project.Up(appConfig, true)
+			project.UpFollowProjectLogs(appConfig)
 		},
 	}
 	projectCmd.AddCommand(up)
