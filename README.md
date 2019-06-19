@@ -3,23 +3,47 @@
 dev is a command line tool that wraps [Docker Compose](https://docs.docker.com/compose/) to enable shared resources
 for an ideal development environment.
 
+
+# Table of Contents
+- [Background](#background)
+- [Goals](#goals)
+- [Installing](#installing)
+  * [Ubuntu](#ubuntu)
+  * [OSX](#osx)
+- [Building](#Building)
+- [Configuration](#Configuration)
+  * [.dev.yml](#.dev.yaml)
+- [{Project} Commands](#project-commands)
+  * [build](#build)
+  * [up](#up)
+  * [ps](#ps)
+  * [sh](#sh)
+- [Contributing](#contributing)
+- [License](#license)
+
+
 # Background
 
-# Requirements
+Versions up to 2.1 of the docker-compose configuration file had a convenient
+way to share configuration across docker-compose files using the
+[extends](https://docs.docker.com/compose/extends/#extending-services) keyword.
+For those wishing to adopt later versions of the configuration, the loss of the
+extends keyword has been [problematic](https://github.com/moby/moby/issues/31101).
+For some, the ability to specify multiple configurations with '-f' flag to
+docker-compose is workable. Starting with version 3.4 another option is to
+use [extension fields](https://docs.docker.com/compose/compose-file/#extension-fields).
+
+If you find the above extensions insufficient for your development container
+needs, you might find this project interesting.
+
+
+# Goals
 
  * Support sharing of docker-compose configuration across projects
  * Support sharing of networks across projects (i.e., manage creation of 'external' networks directly)
  * Support authentication with private container repositories
  * Support dependencies between projects, networks and registries
 
-# Table of Contents
-- [Installing](#installing)
-- [Overview](#overview)
-- [Commands](#commands)
-  * [build](#build)
-  * [up](#up)
-  * [ps](#ps)
-  * [sh](#sh)
 
 # Installing
 
@@ -44,27 +68,43 @@ brew tap wish/homebrew-wish
 brew install wish-dev
 ```
 
-# Contributing
+# Building
 
 You will need a current version of [golang](https://golang.org/dl/) that supports
 modules to build this project.
 
+1. Clone this repository.
+1. If you clone into your $GOPATH, you will need to enable go modules via the
+[GO11MODULE](https://github.com/golang/go/wiki/Modules) environment variable.
+1. Run `make help` for a list of targets.
+
+
 # Configuration
 
-Dev will search the current directory and its parent directory until it locates
-a configuration file. The name of the configuration is .dev.yaml but can be
-overridden with the --config flag. If a per-project configuration file cannot
-be found, dev will look in your home directory and finally in
-$XDG_CONFIG_HOME/dev for one.
+The `dev` command will search the current directory and its parent directory
+until it locates a configuration file. If no configuration file is found in
+your home directory it will look in the `$XDG_CONFIG_HOME/dev` directory for
+one. Valid dev configuration file names will match the following regular
+expression: `.?dev.ya?ml`.
 
-If a configuration file is not found, dev will look in the current working
-directory for a docker-compose.yml file. If one is found, it will create a dev
-project with the base name of current directory.  For example, if you are
-located in $HOME/Projects/my-app and there is a docker-compose.yml in that
-directory, dev will create a command named 'my-app' and a number of
-subcommands.  These subcommands can be listed by running `dev my-app --help`.
+The search for a configuration file can also be overridden by specifying a path
+via the DEV_CONFIG environment variable. This is the same mechanism you must use
+if you would like to use more than one dev configuration file. To use more
+than one configuration file, separate the .dev.yaml paths with a colon, i.e.:
 
-If you require more than one docker-compose.yml for your project, you can
+```
+export DEV_CONFIG=$HOME/Projects/app_one:$HOME/Projects/shared_app_config
+```
+
+### .dev.yaml
+
+There are many ways to structure you project with the `dev` tool.
+
+Typically you will have one .dev.yaml file for each project. Each .dev.yaml
+can manage multiple projects if you happen to have multiple projects in
+the same repository.
+
+If you require more than one docker-compose.yml for your project you can
 specify these in the .dev.yaml file. For example, for the my-app project which
 has a layout like this:
 
@@ -85,7 +125,7 @@ projects:
     docker_compose_files:
       - "docker/docker-compose.shared.yml"
       - "docker-compose.yml"
-    depends_on: ["my-external-network"]
+    depends_on: ["my-registry", "my-external-network"]
 
 networks:
   my-external-network:
@@ -94,35 +134,39 @@ networks:
       driver: default
       config:
         - subnet: 173.16.242.0/16
+
+registries:
+  my-registry:
+      url: "https://my-registry.personal.com"
+      username: "name"
+      password: "pa$$word"
+      continue_on_failure: True
  ```
 
-Running 'dev my-app build' will provide both docker-compose.yml configuration
-files to docker-compose with the -f flag.
+Running 'dev my-app build' will attempt to login to `my-registry` before
+running docker-compose build.
 
-When 'dev my-app up' is run, "my-external-network" will be created if it does not
-exist.
+When `dev my-app up` is run `dev` will first create `my-external-network` if it
+does not exist already, taking care to remove any existing containers listed in
+the `docker_compose_files` that are connected to a network of the same name but
+a different network id.
 
-Run 'dev my-app sh' to get a shell in the container or 'dev my-app sh ls -al'
-to run 'ls -al' in the project container. The "project" container is the
-container in the docker-compose.yml with the same name as the project in the
-.dev.yaml file.
-
-# Overview
-
-Run `dev` to see a list of Projects
+'dev my-app sh' will shell into the project container or run any commands specified on
+container. 'dev my-app sh ls -al' will list all of the files in the project container.
+The "project" container is the container in the docker-compose.yml with the
+same name as the project in the .dev.yaml file.
 
 
 # Project Commands
 
-The following commands are sub-commands added to each project added to
-.dev.yaml. If no .dev.yaml could not be located, dev will look in the current
-directory for a docker-compose.yml file and add a project with the same name as
-the current directory.
+The following commands are added as sub-commands for each project defined in your
+.dev.yaml file/s.
 
 ## build
 
 Run docker-compose build for the specified project. The build will specify
-all the docker-compose files in the project's `docker_compose_files` array.
+all the docker-compose files in the project's `docker_compose_files` array
+to the `docker-compose` command with the -f flag.
 
 ## ps
 
@@ -144,4 +188,21 @@ If this command is run from a subdirectory of the project directory this
 command will first change directories such that relative commands from your
 directory on the host can be run. If run from outside of your project
 directory the starting directory defaults to the WORKDIR specified in the
-project's Dockerfile.
+project's Dockerfile. This functionality currently assumes that mapped the
+project directory (the one where the .dev.yaml file resides) into the
+project container.
+
+
+# Contributing
+
+1. Fork it
+1. Download your fork to your PC (`git clone https://github.com/your_username/dev && cd dev`)
+1. Create your feature branch (`git checkout -b my-new-feature`)
+1. Make changes and add them (`git add .`)
+1. Commit your changes (`git commit -m 'Add some feature'`)
+1. Push to the branch (`git push origin my-new-feature`)
+1. Create new pull request
+
+# License
+
+Dev is released under the MIT license. See [LICENSE](https://github.com/wish/dev/blob/master/LICENSE)
