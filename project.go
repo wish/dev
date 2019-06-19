@@ -31,7 +31,7 @@ func (p *Project) PreRun(command string, appConfig *c.Dev, project *Project) {
 		return
 	}
 
-	RunComposeUp(appConfig.ImagePrefix, p.Config.DockerComposeFilenames, "-d")
+	p.Up(appConfig)
 }
 
 // Dependencies implements the Depedency interface. It returns a list of
@@ -52,8 +52,8 @@ func (p *Project) Up(appConfig *c.Dev) {
 	RunComposeUp(appConfig.ImagePrefix, p.Config.DockerComposeFilenames, "-d")
 }
 
-// UpFollowProjectLogs brings up the specified project with its dependencies and
-// tails the logs of the project container.
+// UpFollowProjectLogs brings up the specified project with its dependencies
+// and tails the logs of the project container.
 func (p *Project) UpFollowProjectLogs(appConfig *c.Dev) {
 	p.Up(appConfig)
 	RunComposeLogs(appConfig.ImagePrefix, p.Config.DockerComposeFilenames, "-f", p.Config.Name)
