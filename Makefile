@@ -34,12 +34,12 @@ vet: ## Runs go vet
 .PHONY: test
 test: lint vet ## Run static analysis and tests
 
-build/dev.linux: $(**/*.go) test ## Creates the linux binary
+build/dev.linux: $(GOFILES_BUILD) ## Creates the linux binary
 	@GOOS=linux CGO_ENABLED=0 go build -ldflags \
 	       '-X "github.com/wish/dev/cmd.BuildDate=${DATE}" -X "github.com/wish/dev/cmd.BuildSha=$(GIT)${DIRTY}" -X "github.com/wish/dev/cmd.BuildVersion=$(VERSION)${V_DIRTY}"' \
 	       -o build/dev.linux cmd/dev/*
 
-build/dev.darwin: $(**/*.go) test ## Creates the osx binary
+build/dev.darwin: $(GOFILES_BUILD) ## Creates the osx binary
 	@GOOS=darwin CGO_ENABLED=0 go build -ldflags \
 		'-X "github.com/wish/dev/cmd.BuildDate=${DATE}" -X "github.com/wish/dev/cmd.BuildSha=$(GIT)${DIRTY}" -X "github.com/wish/dev/cmd.BuildVersion=$(VERSION)${V_DIRTY}"' \
 		-o build/dev.darwin cmd/dev/*
@@ -49,4 +49,4 @@ build/dev: ## Make a link to the executable for this OS type for convenience
 
 .PHONY: watch
 watch: ## Watch .go files for changes and rerun build (requires entr, see https://github.com/clibs/entr)
-	$(GOFILES_WATCH) | entr -rc $(MAKE)
+	$(GOFILES_WATCH) | entr -rc $(MAKE) test ; $(MAKE)
