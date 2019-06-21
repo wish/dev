@@ -25,14 +25,18 @@ clean: ## Removes all build artifacts
 
 .PHONY: lint
 lint: ## Runs linter
-	@golint $(PKGS)
+	@golint -set_exit_status ${PKGS}
 
 .PHONY: vet
 vet: ## Runs go vet
-	@go vet $(PKGS)
+	@go vet ${PKGS}
 
 .PHONY: test
-test: lint vet ## Run static analysis and tests
+test:
+	@go test ${PKGS}
+
+.PHONY: checks
+checks: lint vet test ## Run static analysis and tests
 
 build/dev.linux: $(GOFILES_BUILD) ## Creates the linux binary
 	@GOOS=linux CGO_ENABLED=0 go build -ldflags \
@@ -49,4 +53,10 @@ build/dev: ## Make a link to the executable for this OS type for convenience
 
 .PHONY: watch
 watch: ## Watch .go files for changes and rerun build (requires entr, see https://github.com/clibs/entr)
-	$(GOFILES_WATCH) | entr -rc $(MAKE) test ; $(MAKE)
+	$(GOFILES_WATCH) | entr -rc $(MAKE) checks ; $(MAKE)
+
+.PHONY: coverage
+coverage:
+	@go test -coverprofile=/tmp/cover ${PKGS}
+	@go tool cover -html=/tmp/cover -o coverage.html
+	@rm /tmp/cover
