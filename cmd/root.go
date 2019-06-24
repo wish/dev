@@ -181,7 +181,7 @@ func init() {
 	// specified (info, debug, warn)
 	level := viper.GetString("LOGS")
 	configureLogging(level)
-	initConfig()
+	initConfig(appConfig)
 
 	// environment variable takes precendence over config file setting
 	if viper.GetString("LOGS") == "" {
@@ -270,8 +270,21 @@ func locateConfigFile() string {
 	return ""
 }
 
+func followLink(filename string) string {
+	fi, err := os.Lstat(filename)
+	if err != nil {
+		log.Fatalf("Error fetching file info for %s: %s", filename, err)
+	}
+	if fi.Mode()&os.ModeSymlink != 0 {
+		if filename, err = os.Readlink(filename); err != nil {
+			log.Fatalf("ReadLink error for config file: %s", filename)
+		}
+	}
+	return filename
+}
+
 // initConfig locates the configuration file and loads it into the Config
-func initConfig() {
+func initConfig(devConfig *config.Dev) {
 	cfgFile := viper.GetString("CONFIG")
 	if cfgFile != "" {
 		files := strings.Split(cfgFile, ":")
@@ -287,8 +300,13 @@ func initConfig() {
 			if err := viper.Unmarshal(localConfig); err != nil {
 				log.Fatal(err)
 			}
+			// Ensure that relative paths used in the configuration
+			// file are relative to the actual project, not to the
+			// location of a link by following any link provided as
+			// a configuration file.
+			configFile = followLink(configFile)
 			config.Expand(configFile, localConfig)
-			if err := config.Merge(appConfig, localConfig); err != nil {
+			if err := config.Merge(devConfig, localConfig); err != nil {
 				log.Fatal(err)
 			}
 		}
@@ -302,13 +320,14 @@ func initConfig() {
 			if err := viper.ReadInConfig(); err != nil {
 				log.Fatal(err)
 			}
-			if err := viper.Unmarshal(appConfig); err != nil {
+			if err := viper.Unmarshal(devConfig); err != nil {
 				log.Fatal(err)
 			}
 		} else {
 			log.Debugln("No configuration file found")
 		}
 
-		config.Expand(cfgFile, appConfig)
+		cfgFile = followLink(cfgFile)
+		config.Expand(cfgFile, devConfig)
 	}
 }

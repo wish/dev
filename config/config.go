@@ -154,8 +154,8 @@ func projectNameFromPath(projectPath string) string {
 
 func newProjectConfig(projectPath, composeFilename string) *Project {
 	project := &Project{
-		Directory:              projectPath,
-		Name:                   projectNameFromPath(projectPath),
+		Directory: projectPath,
+		Name:      projectNameFromPath(projectPath),
 		DockerComposeFilenames: []string{composeFilename},
 	}
 
@@ -214,20 +214,6 @@ func setDefaults(config *Dev) {
 // Expand makes modifications to the configuration structure
 // provided by the user before it is used by dev.
 func Expand(filename string, config *Dev) {
-	// Ensure that relative paths used in the configuration file are
-	// relative to the actual project, not to the location of a link.
-	if filename != "" {
-		fi, err := os.Lstat(filename)
-		if err != nil {
-			log.Fatalf("Error fetching file info for %s: %s", filename, err)
-		}
-		if fi.Mode()&os.ModeSymlink != 0 {
-			if filename, err = os.Readlink(filename); err != nil {
-				log.Fatalf("ReadLink error for config file: %s", filename)
-			}
-		}
-	}
-
 	config.Filename = filename
 	if config.Filename == "" {
 		dir, err := os.Getwd()
@@ -282,15 +268,6 @@ func Expand(filename string, config *Dev) {
 	}
 }
 
-func projectExists(config *Dev, name string) bool {
-	for _, project := range config.Projects {
-		if project.Name == name {
-			return true
-		}
-	}
-	return false
-}
-
 func isDefaultConfig(config *Dev) bool {
 	return (len(config.Projects) == 0 && len(config.Networks) == 0 &&
 		len(config.Registries) == 0 && config.ImagePrefix == "")
@@ -317,7 +294,7 @@ func Merge(target *Dev, source *Dev) error {
 	}
 
 	for _, project := range source.Projects {
-		if projectExists(target, project.Name) {
+		if _, exists := target.Projects[project.Name]; exists {
 			return errors.Errorf("duplicate project with name %s found in %s", project.Name, source.Filename)
 		}
 	}
