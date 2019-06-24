@@ -162,7 +162,9 @@ func addProjects(cmd *cobra.Command, config *config.Dev) error {
 	return nil
 }
 
-func init() {
+// Initialize parses and loads the dev configuration file, bootstrapping the
+// program.
+func Initialize() {
 	viper.AutomaticEnv()
 	viper.SetEnvPrefix("DEV")
 
