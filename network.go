@@ -34,10 +34,10 @@ func (n *Network) create() string {
 	}
 	if networkID == "" {
 		networkID, err = docker.NetworkCreate(n.Name, n.Config)
-		log.Infof("Created %s network %s", n.Name, networkID)
 		if err != nil {
 			log.Fatal(err)
 		}
+		log.Infof("Created %s network %s", n.Name, networkID)
 	} else {
 		log.Debugf("Network %s already exists with id %s", n.Name, networkID)
 	}
