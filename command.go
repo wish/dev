@@ -22,7 +22,7 @@ func runCommand(name string, args []string) {
 	command.Run()
 }
 
-// RunDockerCompose runs docker-compose wih the specified subcommand and
+// RunDockerCompose runs docker-compose with the specified subcommand and
 // arguments.
 func runDockerCompose(cmd, project string, composePaths []string, args ...string) {
 	cmdLine := []string{"-p", project}

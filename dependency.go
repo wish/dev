@@ -39,7 +39,7 @@ type Dependency interface {
 	// Dependencies returns the names of all the dev objects it depends on
 	// in order to function.
 	Dependencies() []string
-	// Name of the depencency. Maps to the name given to the object in the
+	// Name of the dependency. Maps to the name given to the object in the
 	// dev configuration file.
 	GetName() string
 }

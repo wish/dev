@@ -34,7 +34,7 @@ func (p *Project) PreRun(command string, appConfig *c.Dev, project *Project) {
 	p.Up(appConfig)
 }
 
-// Dependencies implements the Depedency interface. It returns a list of
+// Dependencies implements the Dependency interface. It returns a list of
 // the names of its dependencies. These can be names of other projects,
 // networks or registries.
 func (p *Project) Dependencies() []string {

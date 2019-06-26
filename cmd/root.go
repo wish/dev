@@ -19,7 +19,7 @@ import (
 var (
 	// BuildSha is used by the build to include the git sha in the --version output
 	BuildSha = "BuildSha not set (use Makefile to set)"
-	// BuildVersion is set by the Makefile with link flags for ouput in --version
+	// BuildVersion is set by the Makefile with link flags for output in --version
 	BuildVersion = "Build not set (use Makefile to set)"
 	// BuildDate is used by the build to include the build date in the --version output
 	BuildDate = "BuildDate not set (use Makefile to set)"
@@ -175,7 +175,7 @@ func init() {
 
 	// XXX: no global command line flags (persistentFlags) b/c they
 	// DisableFlagParsing is set for the 'sh' command so users do not have to
-	// surround command line with quotes or preceed with --.
+	// surround command line with quotes or precede with --.
 
 	// set default log level, use DEV_LOGS environment variable if
 	// specified (info, debug, warn)
@@ -183,7 +183,7 @@ func init() {
 	configureLogging(level)
 	initConfig(appConfig)
 
-	// environment variable takes precendence over config file setting
+	// environment variable takes precedence over config file setting
 	if viper.GetString("LOGS") == "" {
 		configureLogging(appConfig.Log.Level)
 	}
