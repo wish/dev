@@ -9,6 +9,7 @@ import (
 
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
+	"github.com/spf13/afero"
 
 	"github.com/docker/docker/api/types"
 )
@@ -65,6 +66,9 @@ type Dev struct {
 	// found. Note that compose only adds the prefix to local image
 	// builds.
 	ImagePrefix string `mapstructure:"image_prefix"`
+
+	// Filesystem to read configuration from
+	fs afero.Fs
 }
 
 // LogConfig holds the logging related configuration.
@@ -127,8 +131,21 @@ func NewConfig() *Dev {
 		Log: LogConfig{
 			Level: LogLevelDefault,
 		},
+		fs: afero.NewOsFs(),
 	}
 	return config
+}
+
+// SetFs set the filesystem used for reading configuration. Helpful during
+// testing.
+func (d *Dev) SetFs(fs afero.Fs) {
+	d.fs = fs
+}
+
+// GetFs returns the filesystem implemention. The default uses the filesytem
+// but can be replaced via SetFs for testing.
+func (d *Dev) GetFs() afero.Fs {
+	return d.fs
 }
 
 func pathToDockerComposeFilenames(directory string) []string {
@@ -154,8 +171,8 @@ func projectNameFromPath(projectPath string) string {
 
 func newProjectConfig(projectPath, composeFilename string) *Project {
 	project := &Project{
-		Directory: projectPath,
-		Name:      projectNameFromPath(projectPath),
+		Directory:              projectPath,
+		Name:                   projectNameFromPath(projectPath),
 		DockerComposeFilenames: []string{composeFilename},
 	}
 

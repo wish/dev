@@ -1,7 +1,7 @@
 DATE 		:= $(shell date +"%a %b %d %T %Y")
 UNAME_S 	:= $(shell uname -s | tr A-Z a-z)
 GOFILES_WATCH 	:= find . -type f -iname "*.go"
-GOFILES_BUILD   := $(shell find . -type f -iname "*.go")
+GOFILES_BUILD   := $(shell find . -type f -iname "*.go" | grep -v '^.test\/')
 PKGS 		:= $(shell go list ./...)
 
 VERSION := $(shell git describe --tags 2> /dev/null || echo "unreleased")
