@@ -9,16 +9,40 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// A dumping ground for utilities used across commands that use exec.Command to run..
+// Commander is a wrapper around the exec.Command interface. It only contains
+// what we need in order to substitue it with something else that works a
+// little better for testing.
+type Commander interface {
+	Run() error
+}
+
+var cmdExecutor Commander = nil
+
+type testCommander struct {
+}
+
+func (tc *testCommander) Run() error {
+	return nil
+}
+
+func setExecutor(executor Commander) {
+	cmdExecutor = executor
+}
+
+func getExecutor(name string, args ...string) Commander {
+	if cmdExecutor == nil {
+		cmd := exec.Command(name, args...)
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		cmd.Stdin = os.Stdin
+		return cmd
+	}
+	return cmdExecutor
+}
 
 func runCommand(name string, args []string) {
 	log.Debugf("Running: %s %s", name, strings.Join(args, " "))
-	command := exec.Command(name, args...)
-
-	command.Stdout = os.Stdout
-	command.Stderr = os.Stderr
-	command.Stdin = os.Stdin
-
+	command := getExecutor(name, args...)
 	command.Run()
 }
 
