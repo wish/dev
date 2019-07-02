@@ -273,19 +273,6 @@ func locateConfigFile() string {
 	return ""
 }
 
-func followLink(filename string) string {
-	fi, err := os.Lstat(filename)
-	if err != nil {
-		log.Fatalf("Error fetching file info for %s: %s", filename, err)
-	}
-	if fi.Mode()&os.ModeSymlink != 0 {
-		if filename, err = os.Readlink(filename); err != nil {
-			log.Fatalf("ReadLink error for config file: %s", filename)
-		}
-	}
-	return filename
-}
-
 // initConfig locates the configuration file and loads it into the Config
 func initConfig(devConfig *config.Dev) {
 	cfgFile := viper.GetString("CONFIG")
@@ -307,7 +294,6 @@ func initConfig(devConfig *config.Dev) {
 			// file are relative to the actual project, not to the
 			// location of a link by following any link provided as
 			// a configuration file.
-			configFile = followLink(configFile)
 			config.Expand(configFile, localConfig)
 			if err := config.Merge(devConfig, localConfig); err != nil {
 				log.Fatal(err)
@@ -330,7 +316,6 @@ func initConfig(devConfig *config.Dev) {
 			log.Debugln("No configuration file found")
 		}
 
-		cfgFile = followLink(cfgFile)
 		config.Expand(cfgFile, devConfig)
 	}
 }
