@@ -15,7 +15,7 @@ image_prefix: "bigco"
 
 projects:
   postgresql:
-    aliases: ["db"]
+    aliases: ["db", "pg"]
     docker_compose_files:
       - "shared.docker-compose.yml"
       - "db.docker-compose.yml"

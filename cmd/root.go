@@ -23,8 +23,8 @@ var (
 	BuildVersion = "Build not set (use Makefile to set)"
 	// BuildDate is used by the build to include the build date in the --version output
 	BuildDate = "BuildDate not set (use Makefile to set)"
-	// AppConfig stores all of the configuration data in the dev configuration files
-	AppConfig = config.NewConfig()
+	// appConfig stores all of the configuration data in the dev configuration files
+	appConfig = config.NewConfig()
 )
 
 var rootCmd = &cobra.Command{
@@ -40,7 +40,7 @@ var rootCmd = &cobra.Command{
 
 func configureLogging(logLevel string) {
 	if logLevel == "" {
-		logLevel = AppConfig.Log.Level
+		logLevel = appConfig.Log.Level
 	}
 	logRusLevel, err := log.ParseLevel(logLevel)
 	if err != nil {
@@ -67,7 +67,7 @@ func addProjectCommands(projectCmd *cobra.Command, devConfig *config.Dev, projec
 		Use:   dev.BUILD,
 		Short: "Build the " + project.Name + " container (and its dependencies)",
 		PreRun: func(cmd *cobra.Command, args []string) {
-			if err := dev.InitDeps(AppConfig, dev.BUILD, project); err != nil {
+			if err := dev.InitDeps(appConfig, dev.BUILD, project); err != nil {
 				log.Fatalf("dependency initialization error: %s", err)
 			}
 		},
@@ -84,12 +84,12 @@ func addProjectCommands(projectCmd *cobra.Command, devConfig *config.Dev, projec
 		Use:   dev.UP,
 		Short: "Create and start the " + project.Name + " containers",
 		PreRun: func(cmd *cobra.Command, args []string) {
-			if err := dev.InitDeps(AppConfig, dev.UP, project); err != nil {
+			if err := dev.InitDeps(appConfig, dev.UP, project); err != nil {
 				log.Fatalf("dependency initialization error: %s", err)
 			}
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			project.UpFollowProjectLogs(AppConfig)
+			project.UpFollowProjectLogs(appConfig)
 		},
 	}
 	projectCmd.AddCommand(up)
@@ -120,7 +120,7 @@ func addProjectCommands(projectCmd *cobra.Command, devConfig *config.Dev, projec
 				cmd.Help()
 				return
 			}
-			project.Shell(AppConfig, args)
+			project.Shell(appConfig, args)
 		},
 	}
 	projectCmd.AddCommand(sh)
@@ -165,7 +165,7 @@ func addProjects(cmd *cobra.Command, config *config.Dev) error {
 // Initialize parses and loads the dev configuration file, bootstrapping the
 // program.
 func Initialize() {
-	viper.SetFs(AppConfig.GetFs())
+	viper.SetFs(appConfig.GetFs())
 	viper.AutomaticEnv()
 	viper.SetEnvPrefix("DEV")
 
@@ -184,11 +184,11 @@ func Initialize() {
 	// specified (info, debug, warn)
 	level := viper.GetString("LOGS")
 	configureLogging(level)
-	initConfig(AppConfig)
+	initConfig(appConfig)
 
 	// environment variable takes precedence over config file setting
 	if viper.GetString("LOGS") == "" {
-		configureLogging(AppConfig.Log.Level)
+		configureLogging(appConfig.Log.Level)
 	}
 
 	// removes the annoying: WARNING: Found orphan containers
@@ -198,9 +198,9 @@ func Initialize() {
 		log.Fatalf("Failed to set environment variable: %s", err)
 	}
 
-	log.Debugf("Using image prefix '%s'", AppConfig.ImagePrefix)
+	log.Debugf("Using image prefix '%s'", appConfig.ImagePrefix)
 
-	if err := addProjects(rootCmd, AppConfig); err != nil {
+	if err := addProjects(rootCmd, appConfig); err != nil {
 		log.Fatalf("Error adding projects: %s", err)
 	}
 }
@@ -249,7 +249,7 @@ func locateConfigFile() string {
 	for {
 		configFiles := getAppConfigPaths(currentDir)
 		for _, configFile := range configFiles {
-			if _, err := AppConfig.GetFs().Stat(configFile); err == nil {
+			if _, err := appConfig.GetFs().Stat(configFile); err == nil {
 				return configFile
 			}
 		}
@@ -262,7 +262,7 @@ func locateConfigFile() string {
 			configFiles := getDefaultAppConfigFilenames()
 
 			for _, configFile := range configFiles {
-				if _, err := AppConfig.GetFs().Stat(configFile); err == nil {
+				if _, err := appConfig.GetFs().Stat(configFile); err == nil {
 					return configFile
 				}
 			}
