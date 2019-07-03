@@ -319,3 +319,8 @@ func initConfig(devConfig *config.Dev) {
 		config.Expand(cfgFile, devConfig)
 	}
 }
+
+func reset() {
+	rootCmd.ResetCommands()
+	appConfig = config.NewConfig()
+}

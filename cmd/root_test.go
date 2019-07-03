@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/wish/dev"
@@ -12,6 +13,8 @@ import (
 
 func TestInitializeWithDevConfigSet(t *testing.T) {
 	defer env.Patch(t, "DEV_CONFIG", "/home/test/.dev.yaml")()
+	reset()
+
 	appConfig.SetFs(afero.NewMemMapFs())
 	test.CreateConfigFile(appConfig.GetFs(), test.BigCoConfig, "/home/test/.dev.yaml")
 
@@ -68,6 +71,7 @@ func TestInitializeWithoutDevConfigSet(t *testing.T) {
 	defer env.Patch(t, "DEV_CONFIG", "")() // set to nothing so i can test locally where I set it
 	defer env.Patch(t, "HOME", homedir)()
 
+	reset()
 	appConfig.SetFs(afero.NewMemMapFs())
 	test.CreateConfigFile(appConfig.GetFs(), test.BigCoConfig, homedir+"/.config/dev/dev.yaml")
 
@@ -116,5 +120,24 @@ func TestInitializeWithoutDevConfigSet(t *testing.T) {
 				t.Errorf("Expected cmd to be named '%s', but got '%s'", subCmd, sCmd.Short)
 			}
 		}
+	}
+}
+
+func TestInitializeWithoutConfig(t *testing.T) {
+	homedir := "/home/test"
+	defer env.Patch(t, "DEV_CONFIG", "")()
+	defer env.Patch(t, "HOME", homedir)()
+
+	reset()
+	appConfig.SetFs(afero.NewMemMapFs())
+
+	Initialize()
+
+	numCommands := len(rootCmd.Commands())
+	if numCommands != 0 {
+		t.Errorf("Expected 0 commands without a config, but got %d", numCommands)
+	}
+	for _, cmd := range rootCmd.Commands() {
+		fmt.Printf("cmd %s", cmd.Use)
 	}
 }
