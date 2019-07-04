@@ -9,27 +9,22 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// Commander is a wrapper around the exec.Command interface. It only contains
-// what we need in order to substitue it with something else that works a
-// little better for testing.
-type Commander interface {
+// Command is a wrapper around exec.Command so we can substitute a test version
+// in code without changing its usage.
+type Command interface {
 	Run() error
 }
 
-var cmdExecutor Commander = nil
+// Commander wraps the exec.Command constructor for use in testing.
+type Commander func(name string, args ...string) Command
 
-type testCommander struct {
-}
-
-func (tc *testCommander) Run() error {
-	return nil
-}
+var cmdExecutor Commander
 
 func setExecutor(executor Commander) {
 	cmdExecutor = executor
 }
 
-func getExecutor(name string, args ...string) Commander {
+func newExecutor(name string, args ...string) Command {
 	if cmdExecutor == nil {
 		cmd := exec.Command(name, args...)
 		cmd.Stdout = os.Stdout
@@ -37,12 +32,12 @@ func getExecutor(name string, args ...string) Commander {
 		cmd.Stdin = os.Stdin
 		return cmd
 	}
-	return cmdExecutor
+	return cmdExecutor(name, args...)
 }
 
 func runCommand(name string, args []string) {
 	log.Debugf("Running: %s %s", name, strings.Join(args, " "))
-	command := getExecutor(name, args...)
+	command := newExecutor(name, args...)
 	command.Run()
 }
 
