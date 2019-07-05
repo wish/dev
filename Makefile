@@ -3,6 +3,8 @@ UNAME_S 	:= $(shell uname -s | tr A-Z a-z)
 GOFILES_WATCH 	:= find . -type f -iname "*.go"
 GOFILES_BUILD   := $(shell find . -type f -iname "*.go" | grep -v '^.test\/')
 PKGS 		:= $(shell go list ./...)
+PKGS_TO_TEST   	:= $(shell go list ./... | grep -v test)
+
 
 VERSION := $(shell git describe --tags 2> /dev/null || echo "unreleased")
 V_DIRTY := $(shell git describe --exact-match HEAD 2> /dev/null > /dev/null || echo "-unreleased")
@@ -33,7 +35,7 @@ vet: ## Runs go vet
 
 .PHONY: test
 test:
-	@go test ${PKGS}
+	@go test ${PKGS_TO_TEST}
 
 .PHONY: checks
 checks: lint vet test ## Run static analysis and tests
@@ -57,6 +59,6 @@ watch: ## Watch .go files for changes and rerun build (requires entr, see https:
 
 .PHONY: coverage
 coverage:
-	@go test -coverprofile=/tmp/cover ${PKGS}
+	@go test -coverprofile=/tmp/cover ${PKGS_TO_TEST}
 	@go tool cover -html=/tmp/cover -o coverage.html
 	@rm /tmp/cover
