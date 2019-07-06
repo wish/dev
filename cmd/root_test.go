@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/sirupsen/logrus"
 	"github.com/wish/dev"
 	"github.com/wish/dev/test"
 
@@ -11,11 +12,32 @@ import (
 	"gotest.tools/env"
 )
 
+func TestInitializeWithoutDockerComposeInstalled(t *testing.T) {
+	defer env.Patch(t, "DEV_CONFIG", "/home/test/.dev.yaml")()
+	defer env.Patch(t, "PATH", "/usr/bin:/usr/local/bin:/sbin")()
+
+	appConfig.SetFs(afero.NewMemMapFs())
+	test.CreateConfigFile(appConfig.GetFs(), test.BigCoConfig, "/home/test/.dev.yaml")
+
+	var calledOnFatalError bool
+	logrus.StandardLogger().ExitFunc = func(x int) {
+		calledOnFatalError = true
+	}
+
+	Initialize()
+
+	if !calledOnFatalError {
+		t.Error("Expected a fatal error but did not get one")
+	}
+}
+
 func TestInitializeWithDevConfigSet(t *testing.T) {
 	defer env.Patch(t, "DEV_CONFIG", "/home/test/.dev.yaml")()
+	defer env.Patch(t, "PATH", "/usr/bin:/usr/local/bin:/sbin")()
 	reset()
 
 	appConfig.SetFs(afero.NewMemMapFs())
+	test.CreateDockerCompose(appConfig.GetFs(), "/usr/local/bin")
 	test.CreateConfigFile(appConfig.GetFs(), test.BigCoConfig, "/home/test/.dev.yaml")
 
 	Initialize()
@@ -68,11 +90,13 @@ func TestInitializeWithDevConfigSet(t *testing.T) {
 
 func TestInitializeWithoutDevConfigSet(t *testing.T) {
 	homedir := "/home/test"
+	defer env.Patch(t, "PATH", "/usr/bin:/usr/local/bin:/sbin")()
 	defer env.Patch(t, "DEV_CONFIG", "")() // set to nothing so i can test locally where I set it
 	defer env.Patch(t, "HOME", homedir)()
 
 	reset()
 	appConfig.SetFs(afero.NewMemMapFs())
+	test.CreateDockerCompose(appConfig.GetFs(), "/usr/local/bin")
 	test.CreateConfigFile(appConfig.GetFs(), test.BigCoConfig, homedir+"/.config/dev/dev.yaml")
 
 	Initialize()
@@ -125,11 +149,13 @@ func TestInitializeWithoutDevConfigSet(t *testing.T) {
 
 func TestInitializeWithoutConfig(t *testing.T) {
 	homedir := "/home/test"
+	defer env.Patch(t, "PATH", "/usr/bin:/usr/local/bin:/sbin")()
 	defer env.Patch(t, "DEV_CONFIG", "")()
 	defer env.Patch(t, "HOME", homedir)()
 
 	reset()
 	appConfig.SetFs(afero.NewMemMapFs())
+	test.CreateDockerCompose(appConfig.GetFs(), "/usr/local/bin")
 
 	Initialize()
 
