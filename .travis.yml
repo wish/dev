@@ -15,3 +15,6 @@ notifications:
 script:
   - env GO111MODULE=on make all
   - env GO111MODULE=on make checks
+
+after_success:
+  - bash <(curl -s https://codecov.io/bash)
