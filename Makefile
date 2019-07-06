@@ -35,7 +35,7 @@ vet: ## Runs go vet
 
 .PHONY: test
 test:
-	@go test ${PKGS_TO_TEST}
+	@go test -coverprofile coverage.txt -covermode=atomic ${PKGS_TO_TEST}
 
 .PHONY: checks
 checks: lint vet test ## Run static analysis and tests
