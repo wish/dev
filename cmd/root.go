@@ -162,6 +162,26 @@ func addProjects(cmd *cobra.Command, config *config.Dev) error {
 	return nil
 }
 
+func dockerComposeInstalled() bool {
+	userPath := os.Getenv("PATH")
+	if userPath == "" {
+		log.Debug("PATH is empty string error")
+		return false
+	}
+
+	for _, dir := range strings.Split(userPath, ":") {
+		dc := path.Join(dir, "docker-compose")
+		if fileInfo, err := appConfig.GetFs().Stat(dc); err == nil {
+			if fileInfo.Mode()&0111 != 0 {
+				log.Debugf("Found docker-compose in %s", dc)
+				return true
+			}
+		}
+
+	}
+	return false
+}
+
 // Initialize parses and loads the dev configuration file, bootstrapping the
 // program.
 func Initialize() {
@@ -189,6 +209,10 @@ func Initialize() {
 	// environment variable takes precedence over config file setting
 	if viper.GetString("LOGS") == "" {
 		configureLogging(appConfig.Log.Level)
+	}
+
+	if !dockerComposeInstalled() {
+		log.Fatalf("dev requires docker-compose. See https://docs.docker.com/compose/install/")
 	}
 
 	// removes the annoying: WARNING: Found orphan containers
