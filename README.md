@@ -1,4 +1,4 @@
-# dev [![Build Status](https://travis-ci.org/wish/dev.svg?branch=master)](https://travis-ci.org/wish/dev) [![Go Report Card](https://goreportcard.com/badge/github.com/wish/dev)](https://goreportcard.com/report/github.com/wish/dev)
+# dev  ![codecov][1] [![Build Status](https://travis-ci.org/wish/dev.svg?branch=master)](https://travis-ci.org/wish/dev) [![Go Report Card](https://goreportcard.com/badge/github.com/wish/dev)](https://goreportcard.com/report/github.com/wish/dev)
 
 dev is a command line tool that wraps [Docker Compose](https://docs.docker.com/compose/) to enable shared resources
 for an ideal development environment.
@@ -206,3 +206,7 @@ project container.
 # License
 
 Dev is released under the MIT license. See [LICENSE](https://github.com/wish/dev/blob/master/LICENSE)
+
+
+
+[1]: https://codecov.io/gh/wish/dev/branch/master/graph/badge.svg
