@@ -52,7 +52,7 @@ func (n *Network) createNetworkServiceMap(devConfig *config.Dev, project *config
 
 	serviceNetworkMap := make(map[string][]string, len(networkIDMap))
 	for _, composeFilename := range project.DockerComposeFilenames {
-		composeConfig, err := compose.Parse(project.Directory, composeFilename)
+		composeConfig, err := compose.Parse(devConfig.GetFs(), project.Directory, composeFilename)
 		if err != nil {
 			log.Fatal("Failed to parse docker-compose appConfig file: ", err)
 		}

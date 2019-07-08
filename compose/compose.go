@@ -1,13 +1,13 @@
 package compose
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
 	"github.com/docker/cli/cli/compose/loader"
 	"github.com/docker/cli/cli/compose/types"
 	errors "github.com/pkg/errors"
+	"github.com/spf13/afero"
 )
 
 func buildConfigDetails(dir string, source map[string]interface{}) *types.ConfigDetails {
@@ -29,8 +29,8 @@ func buildConfigDetails(dir string, source map[string]interface{}) *types.Config
 
 // Parse reads and parses the specified docker-compose.yml files and returns
 // a map holdind the parsed structure representing each file.
-func Parse(wd string, file string) (*types.Config, error) {
-	b, err := ioutil.ReadFile(file)
+func Parse(fs afero.Fs, wd string, file string) (*types.Config, error) {
+	b, err := afero.ReadFile(fs, file)
 	if err != nil {
 		return nil, errors.Wrapf(err, "Could not read %s", file)
 	}
