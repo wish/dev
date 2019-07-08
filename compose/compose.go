@@ -28,8 +28,7 @@ func buildConfigDetails(dir string, source map[string]interface{}) *types.Config
 }
 
 // Parse reads and parses the specified docker-compose.yml files and returns
-// a map holindg the parsed structure representing each file.
-//func ParseComposeConfigs(wd string, file string) (map[string]*types.Config, error) {
+// a map holdind the parsed structure representing each file.
 func Parse(wd string, file string) (*types.Config, error) {
 	b, err := ioutil.ReadFile(file)
 	if err != nil {
