@@ -46,6 +46,63 @@ registries:
       continue_on_failure: True
 `
 
+// SharedCompose is a typical shared configuration that may be used by other
+// apps in the same network.
+const SharedCompose = `
+version: '3.6'
+
+# This configuration relies on the network configuration below:
+#
+# networks:
+#     app-net:
+#       external: true
+#
+# Network is created by the dev tool. See the project .dev.yaml.
+#
+services:
+  jaeger:
+    container_name: jaeger
+    image: jaegertracing/all-in-one:1.8
+    ports:
+      - "6831:6831/udp"
+      - "16686:16686"
+    networks:
+      app-net:
+        ipv4_address: 173.16.242.50
+
+  mongodb:
+    container_name: mongodb
+    image: mongo:3.4
+    networks:
+      app-net:
+        ipv4_address: 173.16.242.12
+`
+
+// AppCompose is a typical compose config that may be used alone or
+// in conjunction with shared configuration.
+const AppCompose = `
+version: '3.6'
+
+networks:
+  app-net:
+    external: true
+
+services:
+  app:
+    container_name: app
+    build:
+        context: .
+        dockerfile: app.Dockerfile
+    volumes:
+      - .:/home/app:delegated
+    environment:
+      - "DOCKER_USER=${USER:-app}"
+
+    networks:
+      app-net:
+        ipv4_address: 173.16.242.1
+`
+
 // CreateFile creates the file specified by filename with the contents
 // provided.
 func CreateFile(fs afero.Fs, content string, filename string, perm os.FileMode) {
