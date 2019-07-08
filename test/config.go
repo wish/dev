@@ -61,8 +61,8 @@ func CreateConfigFile(fs afero.Fs, content string, filename string) {
 	CreateFile(fs, content, filename, 0)
 }
 
-// CreateDockerCompose creates a docker-compose file in the specified
-// directory.
-func CreateDockerCompose(fs afero.Fs, directory string) {
+// CreateDockerComposeBinary creates a fake docker-compose file in the
+// specified directory.
+func CreateDockerComposeBinary(fs afero.Fs, directory string) {
 	CreateFile(fs, "", path.Join(directory, "docker-compose"), 0111)
 }
