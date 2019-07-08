@@ -37,7 +37,7 @@ func TestInitializeWithDevConfigSet(t *testing.T) {
 	reset()
 
 	appConfig.SetFs(afero.NewMemMapFs())
-	test.CreateDockerCompose(appConfig.GetFs(), "/usr/local/bin")
+	test.CreateDockerComposeBinary(appConfig.GetFs(), "/usr/local/bin")
 	test.CreateConfigFile(appConfig.GetFs(), test.BigCoConfig, "/home/test/.dev.yaml")
 
 	Initialize()
@@ -96,7 +96,7 @@ func TestInitializeWithoutDevConfigSet(t *testing.T) {
 
 	reset()
 	appConfig.SetFs(afero.NewMemMapFs())
-	test.CreateDockerCompose(appConfig.GetFs(), "/usr/local/bin")
+	test.CreateDockerComposeBinary(appConfig.GetFs(), "/usr/local/bin")
 	test.CreateConfigFile(appConfig.GetFs(), test.BigCoConfig, homedir+"/.config/dev/dev.yaml")
 
 	Initialize()
@@ -155,7 +155,7 @@ func TestInitializeWithoutConfig(t *testing.T) {
 
 	reset()
 	appConfig.SetFs(afero.NewMemMapFs())
-	test.CreateDockerCompose(appConfig.GetFs(), "/usr/local/bin")
+	test.CreateDockerComposeBinary(appConfig.GetFs(), "/usr/local/bin")
 
 	Initialize()
 
