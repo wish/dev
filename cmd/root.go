@@ -23,8 +23,8 @@ var (
 	BuildVersion = "Build not set (use Makefile to set)"
 	// BuildDate is used by the build to include the build date in the --version output
 	BuildDate = "BuildDate not set (use Makefile to set)"
-	// appConfig stores all of the configuration data in the dev configuration files
-	appConfig = config.NewConfig()
+	// AppConfig stores all of the configuration data in the dev configuration files
+	AppConfig = config.NewConfig()
 )
 
 var rootCmd = &cobra.Command{
@@ -40,7 +40,7 @@ var rootCmd = &cobra.Command{
 
 func configureLogging(logLevel string) {
 	if logLevel == "" {
-		logLevel = appConfig.Log.Level
+		logLevel = AppConfig.Log.Level
 	}
 	logRusLevel, err := log.ParseLevel(logLevel)
 	if err != nil {
@@ -85,7 +85,7 @@ func addProjectCommands(objMap map[string]dev.Dependency, projectCmd *cobra.Comm
 		Use:   dev.BUILD,
 		Short: "Build the " + project.Name + " container (and its dependencies)",
 		PreRun: func(cmd *cobra.Command, args []string) {
-			if err := dev.InitDeps(objMap, appConfig, dev.BUILD, project); err != nil {
+			if err := dev.InitDeps(objMap, AppConfig, dev.BUILD, project); err != nil {
 				log.Fatalf("dependency initialization error: %s", err)
 			}
 		},
@@ -102,12 +102,12 @@ func addProjectCommands(objMap map[string]dev.Dependency, projectCmd *cobra.Comm
 		Use:   dev.UP,
 		Short: "Create and start the " + project.Name + " containers",
 		PreRun: func(cmd *cobra.Command, args []string) {
-			if err := dev.InitDeps(objMap, appConfig, dev.UP, project); err != nil {
+			if err := dev.InitDeps(objMap, AppConfig, dev.UP, project); err != nil {
 				log.Fatalf("dependency initialization error: %s", err)
 			}
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			project.UpFollowProjectLogs(appConfig)
+			project.UpFollowProjectLogs(AppConfig)
 		},
 	}
 	projectCmd.AddCommand(up)
@@ -138,7 +138,7 @@ func addProjectCommands(objMap map[string]dev.Dependency, projectCmd *cobra.Comm
 				cmd.Help()
 				return
 			}
-			project.Shell(appConfig, args)
+			project.Shell(AppConfig, args)
 		},
 	}
 	projectCmd.AddCommand(sh)
@@ -189,7 +189,7 @@ func dockerComposeInstalled() bool {
 
 	for _, dir := range strings.Split(userPath, ":") {
 		dc := path.Join(dir, "docker-compose")
-		if fileInfo, err := appConfig.GetFs().Stat(dc); err == nil {
+		if fileInfo, err := AppConfig.GetFs().Stat(dc); err == nil {
 			if fileInfo.Mode()&0111 != 0 {
 				log.Debugf("Found docker-compose in %s", dc)
 				return true
@@ -203,7 +203,7 @@ func dockerComposeInstalled() bool {
 // Initialize parses and loads the dev configuration file, bootstrapping the
 // program.
 func Initialize() {
-	viper.SetFs(appConfig.GetFs())
+	viper.SetFs(AppConfig.GetFs())
 	viper.AutomaticEnv()
 	viper.SetEnvPrefix("DEV")
 
@@ -222,11 +222,11 @@ func Initialize() {
 	// specified (info, debug, warn)
 	level := viper.GetString("LOGS")
 	configureLogging(level)
-	initConfig(appConfig)
+	initConfig(AppConfig)
 
 	// environment variable takes precedence over config file setting
 	if viper.GetString("LOGS") == "" {
-		configureLogging(appConfig.Log.Level)
+		configureLogging(AppConfig.Log.Level)
 	}
 
 	if !dockerComposeInstalled() {
@@ -240,10 +240,10 @@ func Initialize() {
 		log.Fatalf("Failed to set environment variable: %s", err)
 	}
 
-	log.Debugf("Using image prefix '%s'", appConfig.ImagePrefix)
+	log.Debugf("Using image prefix '%s'", AppConfig.ImagePrefix)
 
-	objMap := createObjectMap(appConfig)
-	if err := addProjects(objMap, rootCmd, appConfig); err != nil {
+	objMap := createObjectMap(AppConfig)
+	if err := addProjects(objMap, rootCmd, AppConfig); err != nil {
 		log.Fatalf("Error adding projects: %s", err)
 	}
 }
@@ -292,7 +292,7 @@ func locateConfigFile() string {
 	for {
 		configFiles := getAppConfigPaths(currentDir)
 		for _, configFile := range configFiles {
-			if _, err := appConfig.GetFs().Stat(configFile); err == nil {
+			if _, err := AppConfig.GetFs().Stat(configFile); err == nil {
 				return configFile
 			}
 		}
@@ -305,7 +305,7 @@ func locateConfigFile() string {
 			configFiles := getDefaultAppConfigFilenames()
 
 			for _, configFile := range configFiles {
-				if _, err := appConfig.GetFs().Stat(configFile); err == nil {
+				if _, err := AppConfig.GetFs().Stat(configFile); err == nil {
 					return configFile
 				}
 			}
@@ -365,5 +365,5 @@ func initConfig(devConfig *config.Dev) {
 
 func reset() {
 	rootCmd.ResetCommands()
-	appConfig = config.NewConfig()
+	AppConfig = config.NewConfig()
 }

@@ -16,8 +16,8 @@ func TestInitializeWithoutDockerComposeInstalled(t *testing.T) {
 	defer env.Patch(t, "DEV_CONFIG", "/home/test/.dev.yaml")()
 	defer env.Patch(t, "PATH", "/usr/bin:/usr/local/bin:/sbin")()
 
-	appConfig.SetFs(afero.NewMemMapFs())
-	test.CreateConfigFile(appConfig.GetFs(), test.BigCoConfig, "/home/test/.dev.yaml")
+	AppConfig.SetFs(afero.NewMemMapFs())
+	test.CreateConfigFile(AppConfig.GetFs(), test.BigCoConfig, "/home/test/.dev.yaml")
 
 	var calledOnFatalError bool
 	logrus.StandardLogger().ExitFunc = func(x int) {
@@ -36,9 +36,9 @@ func TestInitializeWithDevConfigSet(t *testing.T) {
 	defer env.Patch(t, "PATH", "/usr/bin:/usr/local/bin:/sbin")()
 	reset()
 
-	appConfig.SetFs(afero.NewMemMapFs())
-	test.CreateDockerComposeBinary(appConfig.GetFs(), "/usr/local/bin")
-	test.CreateConfigFile(appConfig.GetFs(), test.BigCoConfig, "/home/test/.dev.yaml")
+	AppConfig.SetFs(afero.NewMemMapFs())
+	test.CreateDockerComposeBinary(AppConfig.GetFs(), "/usr/local/bin")
+	test.CreateConfigFile(AppConfig.GetFs(), test.BigCoConfig, "/home/test/.dev.yaml")
 
 	Initialize()
 
@@ -95,9 +95,9 @@ func TestInitializeWithoutDevConfigSet(t *testing.T) {
 	defer env.Patch(t, "HOME", homedir)()
 
 	reset()
-	appConfig.SetFs(afero.NewMemMapFs())
-	test.CreateDockerComposeBinary(appConfig.GetFs(), "/usr/local/bin")
-	test.CreateConfigFile(appConfig.GetFs(), test.BigCoConfig, homedir+"/.config/dev/dev.yaml")
+	AppConfig.SetFs(afero.NewMemMapFs())
+	test.CreateDockerComposeBinary(AppConfig.GetFs(), "/usr/local/bin")
+	test.CreateConfigFile(AppConfig.GetFs(), test.BigCoConfig, homedir+"/.config/dev/dev.yaml")
 
 	Initialize()
 
@@ -154,8 +154,8 @@ func TestInitializeWithoutConfig(t *testing.T) {
 	defer env.Patch(t, "HOME", homedir)()
 
 	reset()
-	appConfig.SetFs(afero.NewMemMapFs())
-	test.CreateDockerComposeBinary(appConfig.GetFs(), "/usr/local/bin")
+	AppConfig.SetFs(afero.NewMemMapFs())
+	test.CreateDockerComposeBinary(AppConfig.GetFs(), "/usr/local/bin")
 
 	Initialize()
 
