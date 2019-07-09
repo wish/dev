@@ -44,24 +44,6 @@ type Dependency interface {
 	GetName() string
 }
 
-func createObjectMap(devConfig *c.Dev) map[string]Dependency {
-	objMap := make(map[string]Dependency)
-
-	for name, opts := range devConfig.Projects {
-		objMap[name] = NewProject(opts)
-	}
-
-	for name, opts := range devConfig.Networks {
-		objMap[name] = NewNetwork(name, opts)
-	}
-
-	for name, opts := range devConfig.Registries {
-		objMap[name] = NewRegistry(opts)
-	}
-
-	return objMap
-}
-
 func addDeps(objMap map[string]Dependency, dag *d.DAG, obj Dependency) error {
 	for _, depName := range obj.Dependencies() {
 		vertex := d.NewVertex(depName, objMap[depName])
@@ -140,14 +122,13 @@ func topologicalSort(dag *d.DAG, vertex *d.Vertex) ([]string, error) {
 
 // InitDeps runs the PreRun method on each dependency for the specified
 // Project.
-func InitDeps(appConfig *c.Dev, cmd string, project *Project) error {
+func InitDeps(objMap map[string]Dependency, appConfig *c.Dev, cmd string, project *Project) error {
 	dag := d.NewDAG()
 	vertex := d.NewVertex(project.Name, project)
 	if err := dag.AddVertex(vertex); err != nil {
 		return err
 	}
 
-	objMap := createObjectMap(appConfig)
 	if err := addDeps(objMap, dag, project); err != nil {
 		return errors.Wrap(err, "Failure mapping dependencies")
 	}

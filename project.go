@@ -16,6 +16,8 @@ type Project struct {
 	Config *c.Project
 }
 
+//type ProjectConstructor func(config *c.Project) *Project
+
 // NewProject is the Project constructor.
 func NewProject(config *c.Project) *Project {
 	return &Project{
