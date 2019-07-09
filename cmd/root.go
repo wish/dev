@@ -62,12 +62,30 @@ func Execute() {
 	}
 }
 
-func addProjectCommands(projectCmd *cobra.Command, devConfig *config.Dev, project *dev.Project) {
+func createObjectMap(devConfig *config.Dev) map[string]dev.Dependency {
+	objMap := make(map[string]dev.Dependency)
+
+	for name, opts := range devConfig.Projects {
+		objMap[name] = dev.NewProject(opts)
+	}
+
+	for name, opts := range devConfig.Networks {
+		objMap[name] = dev.NewNetwork(name, opts)
+	}
+
+	for name, opts := range devConfig.Registries {
+		objMap[name] = dev.NewRegistry(opts)
+	}
+
+	return objMap
+}
+
+func addProjectCommands(objMap map[string]dev.Dependency, projectCmd *cobra.Command, devConfig *config.Dev, project *dev.Project) {
 	build := &cobra.Command{
 		Use:   dev.BUILD,
 		Short: "Build the " + project.Name + " container (and its dependencies)",
 		PreRun: func(cmd *cobra.Command, args []string) {
-			if err := dev.InitDeps(appConfig, dev.BUILD, project); err != nil {
+			if err := dev.InitDeps(objMap, appConfig, dev.BUILD, project); err != nil {
 				log.Fatalf("dependency initialization error: %s", err)
 			}
 		},
@@ -84,7 +102,7 @@ func addProjectCommands(projectCmd *cobra.Command, devConfig *config.Dev, projec
 		Use:   dev.UP,
 		Short: "Create and start the " + project.Name + " containers",
 		PreRun: func(cmd *cobra.Command, args []string) {
-			if err := dev.InitDeps(appConfig, dev.UP, project); err != nil {
+			if err := dev.InitDeps(objMap, appConfig, dev.UP, project); err != nil {
 				log.Fatalf("dependency initialization error: %s", err)
 			}
 		},
@@ -145,7 +163,7 @@ use more one docker-compose.yml file.`,
 	projectCmd.AddCommand(down)
 }
 
-func addProjects(cmd *cobra.Command, config *config.Dev) error {
+func addProjects(objMap map[string]dev.Dependency, cmd *cobra.Command, config *config.Dev) error {
 	for _, projectConfig := range config.Projects {
 		log.Debugf("Adding %s to project commands, aliases: %s", projectConfig.Name, projectConfig.Aliases)
 		cmd := &cobra.Command{
@@ -157,7 +175,7 @@ func addProjects(cmd *cobra.Command, config *config.Dev) error {
 		rootCmd.AddCommand(cmd)
 
 		project := dev.NewProject(projectConfig)
-		addProjectCommands(cmd, config, project)
+		addProjectCommands(objMap, cmd, config, project)
 	}
 	return nil
 }
@@ -224,7 +242,8 @@ func Initialize() {
 
 	log.Debugf("Using image prefix '%s'", appConfig.ImagePrefix)
 
-	if err := addProjects(rootCmd, appConfig); err != nil {
+	objMap := createObjectMap(appConfig)
+	if err := addProjects(objMap, rootCmd, appConfig); err != nil {
 		log.Fatalf("Error adding projects: %s", err)
 	}
 }
