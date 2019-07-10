@@ -363,7 +363,8 @@ func initConfig(devConfig *config.Dev) {
 	}
 }
 
-func reset() {
+// Reset removes all global state of this module.
+func Reset() {
 	rootCmd.ResetCommands()
 	AppConfig = config.NewConfig()
 }
