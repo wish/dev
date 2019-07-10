@@ -8,7 +8,51 @@ import (
 	"github.com/spf13/afero"
 )
 
-// BigCoConfig is a test dev configuration.
+// SmallCoConfig is a test dev configuration that uses a project to organize its shared
+// dependencies.
+const SmallCoConfig = `
+log:
+  level: "info"
+
+image_prefix: "smallco"
+
+projects:
+  shared:
+    docker_compose_files:
+      - "shared.docker-compose.yml"
+    depends_on: ["app-net", "ecr"]
+
+  postgresql:
+    aliases: ["db", "pg"]
+    docker_compose_files:
+      - "db.docker-compose.yml"
+    depends_on: ["shared"]
+
+  frontend:
+    aliases: ["shiny"]
+    docker_compose_files:
+      - "frontend/docker-compose.yml"
+    depends_on: ["shared"]
+
+networks:
+  app-net:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 173.16.242.0/16
+
+registries:
+    ecr:
+      url: "https://aws.ecr.my-region"
+      username: "developer"
+      password: "procrastination"
+      continue_on_failure: True
+`
+
+// BigCoConfig is a test dev configuration where the shared dependencies are
+// contained in a docker-compose shared file provided to each project and it's
+// other dependencies specified for each project.
 const BigCoConfig = `
 log:
   level: "info"
