@@ -34,7 +34,7 @@ func TestInitializeWithoutDockerComposeInstalled(t *testing.T) {
 func TestInitializeWithDevConfigSet(t *testing.T) {
 	defer env.Patch(t, "DEV_CONFIG", "/home/test/.dev.yaml")()
 	defer env.Patch(t, "PATH", "/usr/bin:/usr/local/bin:/sbin")()
-	reset()
+	Reset()
 
 	AppConfig.SetFs(afero.NewMemMapFs())
 	test.CreateDockerComposeBinary(AppConfig.GetFs(), "/usr/local/bin")
@@ -94,7 +94,7 @@ func TestInitializeWithoutDevConfigSet(t *testing.T) {
 	defer env.Patch(t, "DEV_CONFIG", "")() // set to nothing so i can test locally where I set it
 	defer env.Patch(t, "HOME", homedir)()
 
-	reset()
+	Reset()
 	AppConfig.SetFs(afero.NewMemMapFs())
 	test.CreateDockerComposeBinary(AppConfig.GetFs(), "/usr/local/bin")
 	test.CreateConfigFile(AppConfig.GetFs(), test.BigCoConfig, homedir+"/.config/dev/dev.yaml")
@@ -153,7 +153,7 @@ func TestInitializeWithoutConfig(t *testing.T) {
 	defer env.Patch(t, "DEV_CONFIG", "")()
 	defer env.Patch(t, "HOME", homedir)()
 
-	reset()
+	Reset()
 	AppConfig.SetFs(afero.NewMemMapFs())
 	test.CreateDockerComposeBinary(AppConfig.GetFs(), "/usr/local/bin")
 

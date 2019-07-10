@@ -21,7 +21,7 @@ projects:
     docker_compose_files:
       - "shared.docker-compose.yml"
       - "db.docker-compose.yml"
-    depends_on: ["app-net", "dev-registry"]
+    depends_on: ["app-net", "ecr"]
 
   frontend:
     aliases: ["shiny"]
