@@ -24,10 +24,8 @@ const (
 	// NoProjectWarning is the message provided to the user when no project
 	// could be found
 	NoProjectWarning = `No docker-compose.yml file in this directory.
-
-If you would like to use dev outside of your project directory, create a link
-to your project dev.yaml from $HOME or set the DEV_CONFIG environment variable
-to point to your project dev.yaml.
+If you would like to use dev outside of your project directory, set the DEV_CONFIG
+environment variable to point to your project dev.yaml.
 `
 )
 
