@@ -110,6 +110,8 @@ func RunOnContainer(containerName string, cmds ...string) {
 	if err != nil {
 		if exitError, ok := err.(*exec.ExitError); ok {
 			os.Exit(exitError.ExitCode())
-		}
+		} else {
+            log.Fatalf("runCommand: %v", err)
+        }
 	}
 }
