@@ -35,10 +35,10 @@ func newExecutor(name string, args ...string) Command {
 	return cmdExecutor(name, args...)
 }
 
-func runCommand(name string, args []string) {
+func runCommand(name string, args []string) error {
 	log.Debugf("Running: %s %s", name, strings.Join(args, " "))
 	command := newExecutor(name, args...)
-	command.Run()
+	return command.Run()
 }
 
 // RunDockerCompose runs docker-compose with the specified subcommand and
@@ -106,5 +106,12 @@ func RunOnContainer(containerName string, cmds ...string) {
 		cmdLine = append(cmdLine, cmd)
 	}
 
-	runCommand("docker", cmdLine)
+	err := runCommand("docker", cmdLine)
+	if err != nil {
+		if exitError, ok := err.(*exec.ExitError); ok {
+			os.Exit(exitError.ExitCode())
+		} else {
+            log.Fatalf("runCommand: %v", err)
+        }
+	}
 }
