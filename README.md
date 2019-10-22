@@ -16,6 +16,7 @@ for an ideal development environment.
 - [{Project} Commands](#project-commands)
   * [build](#build)
   * [up](#up)
+  * [down](#down)
   * [ps](#ps)
   * [sh](#sh)
 - [Contributing](#contributing)
