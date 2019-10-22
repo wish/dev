@@ -178,6 +178,10 @@ output of docker-compose ps for your project.
 Start the containers for the specified project. This will build or fetch the
 images as required.
 
+## down
+
+Stop and remove the containers for the specified project. This will _not_ stop any shared services and networks.
+
 ## sh
 
 Run without arguments this command runs an interactive shell on the project
