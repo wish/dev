@@ -66,6 +66,12 @@ func RunComposeBuild(project string, composePaths []string, args ...string) {
 	runDockerCompose("build", project, composePaths, args...)
 }
 
+// RunComposePull runs docker-compose build with the specified docker compose
+// files and args.
+func RunComposePull(project string, composePaths []string, args ...string) {
+	runDockerCompose("pull", project, composePaths, args...)
+}
+
 // RunComposeUp runs docker-compose up with the specified docker compose
 // files and args.
 func RunComposeUp(project string, composePaths []string, args ...string) {
@@ -111,7 +117,14 @@ func RunOnContainer(containerName string, cmds ...string) {
 		if exitError, ok := err.(*exec.ExitError); ok {
 			os.Exit(exitError.ExitCode())
 		} else {
-            log.Fatalf("runCommand: %v", err)
-        }
+			log.Fatalf("runCommand: %v", err)
+		}
 	}
+}
+
+// RunDobi runs dobi build with the specified docker compose
+// files and args.
+// FIXME should we be passing the path to dobi.yaml?
+func RunDobi(project string, args ...string) {
+	runCommand("dobi", args)
 }

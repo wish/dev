@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"path"
 	"runtime"
 	"strings"
@@ -90,10 +91,30 @@ func addProjectCommands(objMap map[string]dev.Dependency, projectCmd *cobra.Comm
 			}
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			dev.RunComposeBuild(
+
+			_, err := exec.LookPath("dobi")
+			if err != nil {
+				// No Dobi. Just pass command to docker-compose
+				dev.RunComposeBuild(
+					devConfig.ImagePrefix,
+					project.Config.DockerComposeFilenames,
+				)
+				return
+			}
+
+			// We do have dobi, so we will pull images without Dockerfile
+			// entries via docker-compose
+			dev.RunComposePull(
 				devConfig.ImagePrefix,
 				project.Config.DockerComposeFilenames,
 			)
+
+			// We do have dobi, so we will build images with Dockerfile entries
+			// with dobi.
+			serviceList := dev.CreateBuildableServiceList(devConfig, project.Config)
+			for _, service := range serviceList {
+				dev.RunDobi("dobi", service)
+			}
 		},
 	}
 	projectCmd.AddCommand(build)
