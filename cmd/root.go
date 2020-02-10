@@ -3,7 +3,9 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"path"
+	"path/filepath"
 	"runtime"
 	"strings"
 
@@ -80,6 +82,20 @@ func createObjectMap(devConfig *config.Dev) map[string]dev.Dependency {
 	return objMap
 }
 
+func dobiAvailable(devConfig *config.Dev) bool {
+	_, err := exec.LookPath("dobi")
+	if err != nil {
+		return false
+	}
+
+	dobiYamlFilename := filepath.Join(devConfig.Dir, "dobi.yaml")
+	if _, err := os.Stat(dobiYamlFilename); os.IsNotExist(err) {
+		return false
+	}
+
+	return true
+}
+
 func addProjectCommands(objMap map[string]dev.Dependency, projectCmd *cobra.Command, devConfig *config.Dev, project *dev.Project) {
 	build := &cobra.Command{
 		Use:   dev.BUILD,
@@ -90,10 +106,30 @@ func addProjectCommands(objMap map[string]dev.Dependency, projectCmd *cobra.Comm
 			}
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			dev.RunComposeBuild(
-				devConfig.ImagePrefix,
-				project.Config.DockerComposeFilenames,
-			)
+			if dobiAvailable(devConfig) {
+				// We do have dobi, so we will pull images without Dockerfile
+				// entries via docker-compose
+				dev.RunComposePull(
+					devConfig.ImagePrefix,
+					project.Config.DockerComposeFilenames,
+				)
+
+				// We do have dobi, so we will build images with Dockerfile entries
+				// with dobi.
+				serviceList := dev.CreateBuildableServiceList(devConfig, project.Config)
+				for _, service := range serviceList {
+					dobiYamlFilename := filepath.Join(devConfig.Dir, "dobi.yaml")
+					dev.RunDobi(devConfig.Dir, "-f", dobiYamlFilename, service)
+				}
+			} else {
+				// No Dobi. Just pass command to docker-compose
+				dev.RunComposeBuild(
+					devConfig.ImagePrefix,
+					project.Config.DockerComposeFilenames,
+				)
+				return
+			}
+
 		},
 	}
 	projectCmd.AddCommand(build)

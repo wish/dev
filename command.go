@@ -24,21 +24,30 @@ func setExecutor(executor Commander) {
 	cmdExecutor = executor
 }
 
-func newExecutor(name string, args ...string) Command {
+func newExecutor(cwd string, name string, args ...string) Command {
 	if cmdExecutor == nil {
 		cmd := exec.Command(name, args...)
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 		cmd.Stdin = os.Stdin
+		cmd.Dir = cwd
 		return cmd
 	}
 	return cmdExecutor(name, args...)
 }
 
-func runCommand(name string, args []string) error {
+func runCommandInDir(cwd string, name string, args []string) error {
 	log.Debugf("Running: %s %s", name, strings.Join(args, " "))
-	command := newExecutor(name, args...)
+	command := newExecutor(cwd, name, args...)
 	return command.Run()
+}
+
+func runCommand(name string, args []string) error {
+	path, err := os.Getwd()
+	if err != nil {
+		log.Println(err)
+	}
+	return runCommandInDir(path, name, args)
 }
 
 // RunDockerCompose runs docker-compose with the specified subcommand and
@@ -64,6 +73,12 @@ func runDockerCompose(cmd, project string, composePaths []string, args ...string
 // files and args.
 func RunComposeBuild(project string, composePaths []string, args ...string) {
 	runDockerCompose("build", project, composePaths, args...)
+}
+
+// RunComposePull runs docker-compose build with the specified docker compose
+// files and args.
+func RunComposePull(project string, composePaths []string, args ...string) {
+	runDockerCompose("pull", project, composePaths, args...)
 }
 
 // RunComposeUp runs docker-compose up with the specified docker compose
@@ -111,7 +126,15 @@ func RunOnContainer(containerName string, cmds ...string) {
 		if exitError, ok := err.(*exec.ExitError); ok {
 			os.Exit(exitError.ExitCode())
 		} else {
-            log.Fatalf("runCommand: %v", err)
-        }
+			log.Fatalf("runCommand: %v", err)
+		}
 	}
+}
+
+// RunDobi runs dobi build with the specified docker compose
+// files and args.
+func RunDobi(dir string, args ...string) {
+	// Unlike docker-compose, dobi needs to run in the same directory as
+	// the project.
+	runCommandInDir(dir, "dobi", args)
 }
