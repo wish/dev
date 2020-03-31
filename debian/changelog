@@ -1,0 +1,11 @@
+dev (0.1.9) bionic; urgency=low
+
+  * Upstream bug fixes
+
+ -- Wish Engineering <launchpad@contextlogic.com>  Fri, 14 Jun 2019 15:21:25 -0700
+
+dev (0.1.8) bionic; urgency=low
+
+  * Initial Release of https://github.com/wish/dev/releases/tag/v0.1.8-alpha
+
+ -- Wish Engineering <launchpad@contextlogic.com>  Wed, 12 Jun 2019 13:55:11 -0700

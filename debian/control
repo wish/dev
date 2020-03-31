@@ -1,0 +1,14 @@
+Source: dev
+Section: devel
+Priority: optional
+Maintainer: Wish Engineering <launchpad@contextlogic.com>
+Build-Depends: debhelper (>= 10)
+Standards-Version: 4.1.2
+Homepage: https://github.com/wish/dev
+#Vcs-Git: https://anonscm.debian.org/git/collab-maint/dev.git
+#Vcs-Browser: https://anonscm.debian.org/cgit/collab-maint/dev.git
+
+Package: dev
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Tooling for containerized development with docker-compose
