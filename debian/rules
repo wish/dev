@@ -13,6 +13,7 @@
 # package maintainers to append LDFLAGS
 #export DEB_LDFLAGS_MAINT_APPEND = -Wl,--as-needed
 
+export PATH := /usr/lib/go-1.12/bin:$(PATH)
 
 %:
 	dh $@
@@ -24,7 +25,7 @@
 #	dh_auto_configure -- #	-DCMAKE_LIBRARY_PATH=$(DEB_HOST_MULTIARCH)
 
 override_dh_auto_build:
-	GOCACHE=/tmp PATH=/usr/lib/go-1.12/bin:"$PATH" make build/dev.linux
+	GOCACHE=/tmp make build/dev.linux
 
 override_dh_auto_test:
 	exit 0
