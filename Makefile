@@ -2,8 +2,8 @@ DATE 		:= $(shell date +"%a %b %d %T %Y")
 UNAME_S 	:= $(shell uname -s | tr A-Z a-z)
 GOFILES_WATCH 	:= find . -type f -iname "*.go"
 GOFILES_BUILD   := $(shell find . -type f -iname "*.go" | grep -v '^.test\/')
-PKGS 		:= $(shell go list ./...)
-PKGS_TO_TEST   	:= $(shell go list ./... | grep -v test)
+PKGS 		:= $(shell go list -mod=vendor ./...)
+PKGS_TO_TEST   	:= $(shell go list -mod=vendor ./... | grep -v test)
 
 
 VERSION := $(shell git describe --tags 2> /dev/null || echo "unreleased")
@@ -43,12 +43,12 @@ checks: lint vet test ## Run static analysis and tests
 build/dev.linux: $(GOFILES_BUILD) ## Creates the linux binary
 	@GOOS=linux CGO_ENABLED=0 go build -ldflags \
 	       '-X "github.com/wish/dev/cmd.BuildDate=${DATE}" -X "github.com/wish/dev/cmd.BuildSha=$(GIT)${DIRTY}" -X "github.com/wish/dev/cmd.BuildVersion=$(VERSION)${V_DIRTY}"' \
-	       -o build/dev.linux cmd/dev/*
+	       -o build/dev.linux -mod=vendor cmd/dev/*
 
 build/dev.darwin: $(GOFILES_BUILD) ## Creates the osx binary
 	@GOOS=darwin CGO_ENABLED=0 go build -ldflags \
 		'-X "github.com/wish/dev/cmd.BuildDate=${DATE}" -X "github.com/wish/dev/cmd.BuildSha=$(GIT)${DIRTY}" -X "github.com/wish/dev/cmd.BuildVersion=$(VERSION)${V_DIRTY}"' \
-		-o build/dev.darwin cmd/dev/*
+		-o build/dev.darwin -mod=vendor cmd/dev/*
 
 build/dev: ## Make a link to the executable for this OS type for convenience
 	$(shell ln -s dev.${UNAME_S} build/dev)
