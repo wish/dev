@@ -23,7 +23,7 @@ all: build/dev.linux build/dev.darwin ## Builds dev binaries for linux and osx
 
 .PHONY: clean
 clean: ## Removes all build artifacts
-	rm -rf build ; go clean
+	rm -rf build ; go clean -mod=vendor
 
 .PHONY: lint
 lint: ## Runs linter
