@@ -1,1 +1,2 @@
-files/usr/* usr
+#!/usr/bin/dh-exec
+build/dev.linux => /usr/bin/dev

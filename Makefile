@@ -51,7 +51,7 @@ build/dev.darwin: $(GOFILES_BUILD) ## Creates the osx binary
 		-o build/dev.darwin -mod=vendor cmd/dev/*
 
 build/dev: ## Make a link to the executable for this OS type for convenience
-	$(shell ln -s dev.${UNAME_S} build/dev)
+	$(shell mkdir -p build; ln -s dev.${UNAME_S} build/dev)
 
 .PHONY: watch
 watch: ## Watch .go files for changes and rerun build (requires entr, see https://github.com/clibs/entr)
