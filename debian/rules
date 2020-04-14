@@ -26,7 +26,7 @@ export GOCACHE := /tmp
 #	dh_auto_configure -- #	-DCMAKE_LIBRARY_PATH=$(DEB_HOST_MULTIARCH)
 
 override_dh_auto_build:
-	make build/dev.linux
+	make build/dev.linux; cp -a build/dev.linux build/dev
 
 override_dh_auto_test:
 	exit 0
