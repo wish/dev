@@ -1,2 +1,2 @@
-#!/usr/bin/dh-exec
-build/dev.linux => /usr/bin/dev
+build/dev.linux /usr/bin
+build/dev /usr/bin
