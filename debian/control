@@ -2,7 +2,7 @@ Source: dev
 Section: devel
 Priority: optional
 Maintainer: Wish Engineering <launchpad@contextlogic.com>
-Build-Depends: debhelper (>= 10), golang-1.12
+Build-Depends: debhelper (>= 10), golang-1.13
 Standards-Version: 4.1.2
 Homepage: https://github.com/wish/dev
 #Vcs-Git: https://anonscm.debian.org/git/collab-maint/dev.git
