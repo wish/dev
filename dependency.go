@@ -18,6 +18,9 @@ const (
 	// DOWN constant referring to the "down" command of this project which
 	// stops and removes the project container.
 	DOWN = "down"
+	// ALLDOWN constant referring to the "alldown" command of this project which
+	// stops and removes all project containers.
+	ALLDOWN = "alldown"
 	// PS constant referring to the "ps" command of this project which
 	// shows the status of the containers used by the project.
 	PS = "ps"

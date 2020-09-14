@@ -197,6 +197,22 @@ use more one docker-compose.yml file.`,
 		},
 	}
 	projectCmd.AddCommand(down)
+
+	alldown := &cobra.Command{
+		Use:   dev.ALLDOWN,
+		Short: "Stop and destroy all " + project.Name + " project containers",
+		Long: `This stops and destroys the container of the same name as the directory in which
+its docker-compose.yml file is placed. It does stop or destroy any containers that
+may have been brought up to support this project.`,
+		Run: func(cmd *cobra.Command, args []string) {
+			dev.RunComposeDown(
+				devConfig.ImagePrefix,
+				project.Config.DockerComposeFilenames,
+			)
+		},
+	}
+	projectCmd.AddCommand(alldown)
+
 }
 
 func addProjects(objMap map[string]dev.Dependency, cmd *cobra.Command, config *config.Dev) error {
