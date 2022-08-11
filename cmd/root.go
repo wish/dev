@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"time"
 
 	"github.com/mitchellh/go-homedir"
 	log "github.com/sirupsen/logrus"
@@ -232,6 +233,26 @@ func addProjects(objMap map[string]dev.Dependency, cmd *cobra.Command, config *c
 	return nil
 }
 
+func checkMinimumVersion() {
+	mv := AppConfig.MinimumVersion
+	if mv != "" && mv > BuildVersion {
+		fmt.Println()
+		fmt.Println("The config file is requesting version")
+		fmt.Println()
+		fmt.Println("  " + mv)
+		fmt.Println()
+		fmt.Println("but this dev binary is version")
+		fmt.Println()
+		fmt.Println("  " + BuildVersion)
+		fmt.Println()
+		fmt.Println("Please consider updating by running")
+		fmt.Println()
+		fmt.Println("  brew update; brew upgrade wish-dev")
+		fmt.Println()
+		time.Sleep(3 * time.Second)
+	}
+}
+
 func dockerComposeInstalled() bool {
 	userPath := os.Getenv("PATH")
 	if userPath == "" {
@@ -280,6 +301,8 @@ func Initialize() {
 	if viper.GetString("LOGS") == "" {
 		configureLogging(AppConfig.Log.Level)
 	}
+
+	checkMinimumVersion()
 
 	if !dockerComposeInstalled() {
 		log.Fatalf("dev requires docker-compose. See https://docs.docker.com/compose/install/")

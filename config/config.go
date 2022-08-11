@@ -64,6 +64,7 @@ type Dev struct {
 	// found. Note that compose only adds the prefix to local image
 	// builds.
 	ImagePrefix string `mapstructure:"image_prefix"`
+	MinimumVersion string `mapstructure:"minimum_version"`
 
 	// Filesystem to read configuration from
 	fs afero.Fs
@@ -295,6 +296,7 @@ func Merge(target *Dev, source *Dev) error {
 	if isDefaultConfig(target) {
 		// project wide settings are set by the first config listed
 		target.ImagePrefix = source.ImagePrefix
+		target.MinimumVersion = source.MinimumVersion
 		target.Log.Level = source.Log.Level
 		target.Dir = source.Dir
 		target.Filename = source.Filename
