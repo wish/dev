@@ -63,7 +63,7 @@ type Dev struct {
 	// file is located or the directory or the docker-compose.yml if one is
 	// found. Note that compose only adds the prefix to local image
 	// builds.
-	ImagePrefix string `mapstructure:"image_prefix"`
+	ImagePrefix    string `mapstructure:"image_prefix"`
 	MinimumVersion string `mapstructure:"minimum_version"`
 
 	// Filesystem to read configuration from
