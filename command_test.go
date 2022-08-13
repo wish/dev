@@ -216,7 +216,7 @@ func TestRunOnContainer(t *testing.T) {
 		Args          []string
 		Expected      []string
 	}{
-		{"foo", []string{"ls", "-al"}, []string{"exec", "foo", "ls", "-al"}},
+		{"foo", []string{"ls", "-al"}, []string{"exec", "-it", "foo", "ls", "-al"}},
 	}
 
 	for _, test := range tests {
