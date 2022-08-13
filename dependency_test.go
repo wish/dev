@@ -10,7 +10,7 @@ import (
 	"github.com/wish/dev/cmd"
 	"github.com/wish/dev/config"
 	"github.com/wish/dev/test"
-	"gotest.tools/env"
+	"gotest.tools/v3/env"
 )
 
 var orderCalled int

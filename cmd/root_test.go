@@ -9,7 +9,7 @@ import (
 	"github.com/wish/dev/test"
 
 	"github.com/spf13/afero"
-	"gotest.tools/env"
+	"gotest.tools/v3/env"
 )
 
 func TestInitializeWithoutDockerComposeInstalled(t *testing.T) {
