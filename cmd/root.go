@@ -135,6 +135,32 @@ func addProjectCommands(objMap map[string]dev.Dependency, projectCmd *cobra.Comm
 	}
 	projectCmd.AddCommand(build)
 
+	download := &cobra.Command{
+		Use:   dev.DOWNLOAD,
+		Short: "Download the " + project.Name + " container (and its dependencies)",
+		PreRun: func(cmd *cobra.Command, args []string) {
+			if err := dev.InitDeps(objMap, AppConfig, dev.DOWNLOAD, project); err != nil {
+				log.Fatalf("dependency initialization error: %s", err)
+			}
+		},
+		Run: func(cmd *cobra.Command, args []string) {
+			// We will pull images without Dockerfile entries via docker-compose
+			dev.RunComposePull(
+				devConfig.ImagePrefix,
+				project.Config.DockerComposeFilenames,
+			)
+
+			// We do have dobi, so we will build images with Dockerfile entries
+			// with dobi.
+			serviceList := dev.CreateBuildableServiceList(devConfig, project.Config)
+			for _, service := range serviceList {
+				dobiYamlFilename := filepath.Join(devConfig.Dir, "dobi.yaml")
+				dev.RunDobi(devConfig.Dir, "-f", dobiYamlFilename, service+"_download")
+			}
+		},
+	}
+	projectCmd.AddCommand(download)
+
 	up := &cobra.Command{
 		Use:   dev.UP,
 		Short: "Create and start the " + project.Name + " containers",
