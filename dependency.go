@@ -12,11 +12,11 @@ import (
 
 const (
 	// BUILD constant referring to the build command of this project which
-	// builds the project with docker-compose as specified in this tools
+	// builds the project with dobi as specified in this tools
 	// configuration file.
 	BUILD = "build"
 	// DOWNLOAD constant referring to the build command of this project which
-	// builds the project with docker-compose as specified in this tools
+	// downloads the project with dobi as specified in this tools
 	// configuration file.
 	DOWNLOAD = "download"
 	// DOWN constant referring to the "down" command of this project which
