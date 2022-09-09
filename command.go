@@ -53,7 +53,7 @@ func runCommand(name string, args []string) error {
 // RunDockerCompose runs docker-compose with the specified subcommand and
 // arguments.
 func runDockerCompose(cmd, project string, composePaths []string, args ...string) {
-	cmdLine := []string{"-p", project}
+	cmdLine := []string{"compose", "--compatibility", "-p", project}
 
 	for _, path := range composePaths {
 		cmdLine = append(cmdLine, "-f", path)
@@ -66,7 +66,7 @@ func runDockerCompose(cmd, project string, composePaths []string, args ...string
 		cmdLine = append(cmdLine, arg)
 	}
 
-	runCommand("docker-compose", cmdLine)
+	runCommand("docker", cmdLine)
 }
 
 // RunComposeBuild runs docker-compose build with the specified docker compose

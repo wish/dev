@@ -280,23 +280,24 @@ func checkMinimumVersion() {
 }
 
 func dockerComposeInstalled() bool {
-	userPath := os.Getenv("PATH")
-	if userPath == "" {
-		log.Debug("PATH is empty string error")
+	// The docker-compose v2 binary can be in a few different places.
+	// Let's actually try running the command and check the exit code to see if it's
+	// installed properly.
+	cmd := exec.Command("docker", "compose")
+
+	if err := cmd.Start(); err != nil {
+		log.Fatalf("cmd.Start: %v", err)
+	}
+
+	if err := cmd.Wait(); err != nil {
+		if exiterr, ok := err.(*exec.ExitError); ok {
+			log.Debugf("Exit Status: %d", exiterr.ExitCode())
+		} else {
+			log.Fatalf("cmd.Wait: %v", err)
+		}
 		return false
 	}
-
-	for _, dir := range strings.Split(userPath, ":") {
-		dc := path.Join(dir, "docker-compose")
-		if fileInfo, err := AppConfig.GetFs().Stat(dc); err == nil {
-			if fileInfo.Mode()&0111 != 0 {
-				log.Debugf("Found docker-compose in %s", dc)
-				return true
-			}
-		}
-
-	}
-	return false
+	return true
 }
 
 // Initialize parses and loads the dev configuration file, bootstrapping the

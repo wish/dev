@@ -44,8 +44,8 @@ func TestRunComposeBuild(t *testing.T) {
 		Args         []string
 		Expected     []string
 	}{
-		{"foo", []string{"/foo/bar/baz"}, []string{}, []string{"-p", "foo", "-f", "/foo/bar/baz", "build"}},
-		{"far", []string{"/foo/bar/baz", "/boo/far/faz"}, []string{"--no-skippy"}, []string{"-p", "far", "-f", "/foo/bar/baz", "-f", "/boo/far/faz", "build", "--no-skippy"}},
+		{"foo", []string{"/foo/bar/baz"}, []string{}, []string{"compose", "--compatibility", "-p", "foo", "-f", "/foo/bar/baz", "build"}},
+		{"far", []string{"/foo/bar/baz", "/boo/far/faz"}, []string{"--no-skippy"}, []string{"compose", "--compatibility", "-p", "far", "-f", "/foo/bar/baz", "-f", "/boo/far/faz", "build", "--no-skippy"}},
 	}
 
 	for _, test := range tests {
@@ -54,8 +54,8 @@ func TestRunComposeBuild(t *testing.T) {
 
 		RunComposeBuild(test.Project, test.ComposePaths, test.Args...)
 
-		if tc.Path != "docker-compose" {
-			t.Errorf("Expected path be %s but got %s", "docker-compose", tc.Path)
+		if tc.Path != "docker" {
+			t.Errorf("Expected path be %s but got %s", "docker", tc.Path)
 		}
 
 		expectedArguments := len(test.Expected)
@@ -79,8 +79,8 @@ func TestRunComposeUp(t *testing.T) {
 		Args         []string
 		Expected     []string
 	}{
-		{"foo", []string{"/foo/bar/baz"}, []string{}, []string{"-p", "foo", "-f", "/foo/bar/baz", "up"}},
-		{"far", []string{"/foo/bar/baz", "/boo/far/faz"}, []string{"--no-skippy"}, []string{"-p", "far", "-f", "/foo/bar/baz", "-f", "/boo/far/faz", "up", "--no-skippy"}},
+		{"foo", []string{"/foo/bar/baz"}, []string{}, []string{"compose", "--compatibility", "-p", "foo", "-f", "/foo/bar/baz", "up"}},
+		{"far", []string{"/foo/bar/baz", "/boo/far/faz"}, []string{"--no-skippy"}, []string{"compose", "--compatibility", "-p", "far", "-f", "/foo/bar/baz", "-f", "/boo/far/faz", "up", "--no-skippy"}},
 	}
 
 	for _, test := range tests {
@@ -89,8 +89,8 @@ func TestRunComposeUp(t *testing.T) {
 
 		RunComposeUp(test.Project, test.ComposePaths, test.Args...)
 
-		if tc.Path != "docker-compose" {
-			t.Errorf("Expected path be %s but got %s", "docker-compose", tc.Path)
+		if tc.Path != "docker" {
+			t.Errorf("Expected path be %s but got %s", "docker", tc.Path)
 		}
 
 		expectedArguments := len(test.Expected)
@@ -113,8 +113,8 @@ func TestRunComposePs(t *testing.T) {
 		Args         []string
 		Expected     []string
 	}{
-		{"foo", []string{"/foo/bar/baz"}, []string{}, []string{"-p", "foo", "-f", "/foo/bar/baz", "ps"}},
-		{"far", []string{"/foo/bar/baz", "/boo/far/faz"}, []string{"--no-skippy"}, []string{"-p", "far", "-f", "/foo/bar/baz", "-f", "/boo/far/faz", "ps", "--no-skippy"}},
+		{"foo", []string{"/foo/bar/baz"}, []string{}, []string{"compose", "--compatibility", "-p", "foo", "-f", "/foo/bar/baz", "ps"}},
+		{"far", []string{"/foo/bar/baz", "/boo/far/faz"}, []string{"--no-skippy"}, []string{"compose", "--compatibility", "-p", "far", "-f", "/foo/bar/baz", "-f", "/boo/far/faz", "ps", "--no-skippy"}},
 	}
 
 	for _, test := range tests {
@@ -123,8 +123,8 @@ func TestRunComposePs(t *testing.T) {
 
 		RunComposePs(test.Project, test.ComposePaths, test.Args...)
 
-		if tc.Path != "docker-compose" {
-			t.Errorf("Expected path be %s but got %s", "docker-compose", tc.Path)
+		if tc.Path != "docker" {
+			t.Errorf("Expected path be %s but got %s", "docker", tc.Path)
 		}
 
 		expectedArguments := len(test.Expected)
@@ -147,8 +147,8 @@ func TestRunComposeLogs(t *testing.T) {
 		Args         []string
 		Expected     []string
 	}{
-		{"foo", []string{"/foo/bar/baz"}, []string{}, []string{"-p", "foo", "-f", "/foo/bar/baz", "logs"}},
-		{"far", []string{"/foo/bar/baz", "/boo/far/faz"}, []string{"--no-skippy"}, []string{"-p", "far", "-f", "/foo/bar/baz", "-f", "/boo/far/faz", "logs", "--no-skippy"}},
+		{"foo", []string{"/foo/bar/baz"}, []string{}, []string{"compose", "--compatibility", "-p", "foo", "-f", "/foo/bar/baz", "logs"}},
+		{"far", []string{"/foo/bar/baz", "/boo/far/faz"}, []string{"--no-skippy"}, []string{"compose", "--compatibility", "-p", "far", "-f", "/foo/bar/baz", "-f", "/boo/far/faz", "logs", "--no-skippy"}},
 	}
 
 	for _, test := range tests {
@@ -157,8 +157,8 @@ func TestRunComposeLogs(t *testing.T) {
 
 		RunComposeLogs(test.Project, test.ComposePaths, test.Args...)
 
-		if tc.Path != "docker-compose" {
-			t.Errorf("Expected path be %s but got %s", "docker-compose", tc.Path)
+		if tc.Path != "docker" {
+			t.Errorf("Expected path be %s but got %s", "docker", tc.Path)
 		}
 
 		expectedArguments := len(test.Expected)
@@ -182,8 +182,8 @@ func TestRunComposeDown(t *testing.T) {
 		Args         []string
 		Expected     []string
 	}{
-		{"foo", []string{"/foo/bar/baz"}, []string{}, []string{"-p", "foo", "-f", "/foo/bar/baz", "down"}},
-		{"far", []string{"/foo/bar/baz", "/boo/far/faz"}, []string{"--no-skippy"}, []string{"-p", "far", "-f", "/foo/bar/baz", "-f", "/boo/far/faz", "down", "--no-skippy"}},
+		{"foo", []string{"/foo/bar/baz"}, []string{}, []string{"compose", "--compatibility", "-p", "foo", "-f", "/foo/bar/baz", "down"}},
+		{"far", []string{"/foo/bar/baz", "/boo/far/faz"}, []string{"--no-skippy"}, []string{"compose", "--compatibility", "-p", "far", "-f", "/foo/bar/baz", "-f", "/boo/far/faz", "down", "--no-skippy"}},
 	}
 
 	for _, test := range tests {
@@ -192,8 +192,8 @@ func TestRunComposeDown(t *testing.T) {
 
 		RunComposeDown(test.Project, test.ComposePaths, test.Args...)
 
-		if tc.Path != "docker-compose" {
-			t.Errorf("Expected path be %s but got %s", "docker-compose", tc.Path)
+		if tc.Path != "docker" {
+			t.Errorf("Expected path be %s but got %s", "docker", tc.Path)
 		}
 
 		expectedArguments := len(test.Expected)
