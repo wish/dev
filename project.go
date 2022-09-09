@@ -51,7 +51,7 @@ func (p *Project) GetName() string {
 
 // Up brings up the specified project container with its dependencies.
 func (p *Project) Up(appConfig *c.Dev) {
-	RunComposeUp(appConfig.ImagePrefix, p.Config.DockerComposeFilenames, "-d")
+	RunComposeUp(appConfig.ImagePrefix, p.Config.DockerComposeFilenames, "-d", "--no-build")
 }
 
 // UpFollowProjectLogs brings up the specified project with its dependencies
