@@ -36,18 +36,18 @@ func newExecutor(cwd string, name string, args ...string) Command {
 	return cmdExecutor(name, args...)
 }
 
-func runCommandInDir(cwd string, name string, args []string) error {
+func RunCommandInDir(cwd string, name string, args []string) error {
 	log.Debugf("Running: %s %s", name, strings.Join(args, " "))
 	command := newExecutor(cwd, name, args...)
 	return command.Run()
 }
 
-func runCommand(name string, args []string) error {
+func RunCommand(name string, args []string) error {
 	path, err := os.Getwd()
 	if err != nil {
 		log.Println(err)
 	}
-	return runCommandInDir(path, name, args)
+	return RunCommandInDir(path, name, args)
 }
 
 // RunDockerCompose runs docker-compose with the specified subcommand and
@@ -66,7 +66,7 @@ func runDockerCompose(cmd, project string, composePaths []string, args ...string
 		cmdLine = append(cmdLine, arg)
 	}
 
-	runCommand("docker", cmdLine)
+	RunCommand("docker", cmdLine)
 }
 
 // RunComposeBuild runs docker-compose build with the specified docker compose
@@ -121,20 +121,31 @@ func RunOnContainer(containerName string, cmds ...string) {
 		cmdLine = append(cmdLine, cmd)
 	}
 
-	err := runCommand("docker", cmdLine)
+	err := RunCommand("docker", cmdLine)
 	if err != nil {
 		if exitError, ok := err.(*exec.ExitError); ok {
 			os.Exit(exitError.ExitCode())
 		} else {
-			log.Fatalf("runCommand: %v", err)
+			log.Fatalf("RunCommand: %v", err)
 		}
 	}
 }
 
-// RunDobi runs dobi build with the specified docker compose
-// files and args.
+// RunDobi runs dobi build with the specified args
 func RunDobi(dir string, args ...string) {
 	// Unlike docker-compose, dobi needs to run in the same directory as
 	// the project.
-	runCommandInDir(dir, "dobi", args)
+	RunCommandInDir(dir, "dobi", args)
+}
+
+// RunDockerPull runs docker pull with the specified remote image
+func RunDockerPull(img string) {
+	cmdLine := []string{"pull", img}
+	RunCommand("docker", cmdLine)
+}
+
+// RunDockerPull runs docker tag
+func RunDockerTag(from string, to string) {
+	cmdLine := []string{"tag", from, to}
+	RunCommand("docker", cmdLine)
 }

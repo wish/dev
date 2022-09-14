@@ -104,8 +104,10 @@ type Project struct {
 // repos.
 type Registry struct {
 	// User readable name, not used by the docker client
-	Name string `mapstructure:"name"`
-	URL  string `mapstructure:"url"`
+	Name                string `mapstructure:"name"`
+	URL                 string `mapstructure:"url"`
+	DownloadPath        string `mapstructure:"download_path"`
+	PostDownloadCommand string `mapstructure:"post_download_command"`
 	// TODO: other forms of auth exist and should be supported, but this is
 	// what I need..
 	Username string `mapstructure:"username"`
