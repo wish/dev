@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"net/url"
 	"os"
 	"os/exec"
 	"path"
@@ -154,8 +155,27 @@ func addProjectCommands(objMap map[string]dev.Dependency, projectCmd *cobra.Comm
 			// with dobi.
 			serviceList := dev.CreateBuildableServiceList(devConfig, project.Config)
 			for _, service := range serviceList {
-				dobiYamlFilename := filepath.Join(devConfig.Dir, "dobi.yaml")
-				dev.RunDobi(devConfig.Dir, "-f", dobiYamlFilename, service+"_download")
+				for _, opts := range devConfig.Registries {
+					registry := dev.NewRegistry(opts)
+
+					if registry.Config.DownloadPath == "" {
+						log.Fatalf("No download_path specified in .dev.yaml. Is .dev.yaml out of date? Consider pulling master.")
+					}
+
+					u, err := url.Parse(registry.Config.URL)
+					if err != nil {
+						log.Fatal(err)
+					}
+
+					remote := path.Join(u.Host, registry.Config.DownloadPath, service) + ":current"
+					localTag := devConfig.ImagePrefix + "_" + service
+
+					dev.RunDockerPull(remote)
+					dev.RunDockerTag(remote, localTag)
+					if cmd := registry.Config.PostDownloadCommand; cmd != "" {
+						dev.RunCommandInDir(devConfig.Dir, cmd, []string{localTag})
+					}
+				}
 			}
 		},
 	}
