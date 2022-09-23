@@ -63,8 +63,9 @@ type Dev struct {
 	// file is located or the directory or the docker-compose.yml if one is
 	// found. Note that compose only adds the prefix to local image
 	// builds.
-	ImagePrefix    string `mapstructure:"image_prefix"`
-	MinimumVersion string `mapstructure:"minimum_version"`
+	ImagePrefix           string                          `mapstructure:"image_prefix"`
+	MinimumVersion        string                          `mapstructure:"minimum_version"`
+	ProjectCommandAliases map[string]*ProjectCommandAlias `mapstructure:"project_command_aliases"`
 
 	// Filesystem to read configuration from
 	fs afero.Fs
@@ -120,6 +121,13 @@ type Registry struct {
 	// if login or connection fails, should dev continue with command or
 	// fail hard.  Default is True
 	ContinueOnFailure bool `mapstructure:"continue_on_failure"`
+}
+
+// ProjectCommandAlias represents an alias defined in .dev.yaml
+type ProjectCommandAlias struct {
+	Target           string `mapstructure:"target"`
+	ShortDescription string `mapstructure:"short_description"`
+	LongDescription  string `mapstructure:"long_description"`
 }
 
 // NewConfig structs the default configuration structure for dev driven
@@ -302,6 +310,7 @@ func Merge(target *Dev, source *Dev) error {
 		target.Log.Level = source.Log.Level
 		target.Dir = source.Dir
 		target.Filename = source.Filename
+		target.ProjectCommandAliases = source.ProjectCommandAliases
 
 	} else if source.ImagePrefix != target.ImagePrefix {
 		// Not sure I like forcing this.. but if users switch back and forth
