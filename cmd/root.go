@@ -260,6 +260,19 @@ may have been brought up to support this project.`,
 	}
 	projectCmd.AddCommand(alldown)
 
+	for source, alias := range devConfig.ProjectCommandAliases {
+		alias := &cobra.Command{
+			Use:   source,
+			Short: alias.ShortDescription,
+			Long:  alias.LongDescription,
+			Run: func(cmd *cobra.Command, args []string) {
+				all := append([]string{alias.Target}, args...)
+				project.Shell(AppConfig, all)
+			},
+		}
+		projectCmd.AddCommand(alias)
+	}
+
 }
 
 func addProjects(objMap map[string]dev.Dependency, cmd *cobra.Command, config *config.Dev) error {
