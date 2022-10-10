@@ -3,6 +3,7 @@ package registry
 import (
 	"bytes"
 	"context"
+	log "github.com/sirupsen/logrus"
 	"os"
 	"os/exec"
 	"time"
@@ -18,5 +19,12 @@ func Login(URL, username, password string) error {
 	command.Stdin = bytes.NewBuffer([]byte(password))
 	command.Stdout = os.Stdout
 	command.Stderr = os.Stderr
-	return command.Run()
+
+	err := command.Run()
+
+	if ctx.Err() != nil {
+		log.Println("Timeout during docker login. If on Mac, CONSIDER UNLOCKING THE KEYCHAIN. Run")
+		log.Println("  security -v unlock-keychain ~/Library/Keychains/login.keychain-db")
+	}
+	return err
 }
